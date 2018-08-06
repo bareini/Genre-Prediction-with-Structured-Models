@@ -43,3 +43,5 @@ x_row_index = 'df_id'
 x_device_id = 'Device ID'
 demo_device_id = 'device_id'
 x_label = 'genre'
+# threshold for demographic features
+min_amount_demo = 5
