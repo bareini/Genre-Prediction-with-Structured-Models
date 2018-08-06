@@ -4,6 +4,8 @@ import pandas as pd
 from scipy.sparse import csr_matrix
 import numpy as np
 
+
+from collections import Counter
 import config
 
 class Model:
@@ -87,8 +89,27 @@ class Model:
 
 
 
+    def feature_from_demo(house_dev_dict, df_demographic):
+        """
+        :param house_dev_dict dictionary devices for every house
+               df_demographic
+        :return feature_demo dictionary the names of demographic feature
+        """
+        # dictionary: count devices for every house
+        dev_per_house = {}
+        for key in house_dev_dict:
+            dev_per_house[key] = len(house_dev_dict[key])
 
+        # replace every 1 in row for the number of device
+        for key, value in dev_per_house.items():
+            df_demographic.loc[[key]] = df_demographic.loc[[key]].replace(1, value)
 
+        # create dictionary for feature and how many device with this feature
+        l = df_demographic[df_demographic.columns].sum(axis=0).to_dict()
+        feature_demo = [key for (key, val) in l.items() if val > config.min_amount_demo]
+        feature_demo = {key: idx for idx, key in enumerate(feature_demo)}
+
+        return feature_demo
 
     def feature_builder(self, feature_list):
         """
