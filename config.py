@@ -43,10 +43,20 @@ col_action = {
     'view_bins': ['unique', 'p1'],
     'completion_bins': ['unique', 'p2'],
     ('part_of_day', 'event_weekday'): ['interact', 't3'],
-    ('Program Genre', 'event_weekday'): ['interact', 'i0'],
-    ('Program Genre', 'part_of_day'): ['interact', 'i1'],
+    ('event_weekday', 'Program Genre'): ['interact', 'i0'],
+    ('part_of_day', 'Program Genre'): ['interact', 'i1'],
     ('prev_1_genre', 'Program Genre'): ['interact', 'g1'],
     ('prev_2_genre', 'prev_1_genre', 'Program Genre'): ['double_interact', 'g2']
+}
+# 'Program Genre' must appear last in the feature name string
+genere_cols = {
+
+    'Program Genre': ['counter', 'g0'],
+    ('event_weekday', 'Program Genre'): ['interact', 'i0'],
+    ('part_of_day', 'Program Genre'): ['interact', 'i1'],
+    ('prev_1_genre', 'Program Genre'): ['interact', 'g1'],
+    ('prev_2_genre', 'prev_1_genre', 'Program Genre'): ['double_interact', 'g2']
+
 }
 
 thrash_holds = {
@@ -70,3 +80,4 @@ demo_device_id = 'device_id'
 x_label = 'genre'
 # threshold for demographic features
 min_amount_demo = 5
+household_id = 'Household ID'
