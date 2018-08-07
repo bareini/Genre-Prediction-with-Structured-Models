@@ -6,6 +6,7 @@ import numpy as np
 from collections import Counter
 import config
 
+
 class Model:
     """
     the model builder
@@ -29,6 +30,10 @@ class Model:
         self.build_features_matrices(df_demo, df_x)
         self.device_indexes_map = df_x.groupby(config.x_device_id).groups
 
+        # todo: set
+        self.tags_seen_in_train = []
+        self.feature_vector_len = 0
+        self.features_position = []
 
     def build_features_matrices(self, df_demo, df_x):
         """
@@ -50,6 +55,10 @@ class Model:
         prev1_node_label = None
         prev2_node_label = None
 
+        training_matrix_rows_index = 0
+        training_matrix_columns_index = 0
+        training_matrix_rows_index_counter = 0
+
         for node in x_matrix:
 
             node_index = df_cols_dict['x'][config.x_row_index]
@@ -58,7 +67,6 @@ class Model:
             if device_id != node[df_cols_dict['x'][config.x_device_id]]:
                 device_id = node[df_cols_dict['x'][config.x_device_id]]
                 relevant_demo = df_demo.query("{}=={}".format(config.demo_device_id, device_id)).values
-
 
             # indexes for the training ('truth') matrix
             training_matrix_rows_index_counter = 0
@@ -69,8 +77,6 @@ class Model:
             word_matrix_rows_index_counter = 0
             word_matrix_rows_index = []
             word_matrix_columns_index = []
-
-
 
             for genere_counter, possible_genre in enumerate(self.all_tags_list):
 
@@ -115,7 +121,6 @@ class Model:
                 word_matrix_columns_index += columns_index
 
                 if possible_genre == node_label:
-
                     temp = list(np.ones(len(columns_index), dtype=np.int32) * training_matrix_rows_index_counter)
                     training_matrix_rows_index += temp
                     training_matrix_columns_index += columns_index
@@ -125,12 +130,12 @@ class Model:
             cols_index = np.asarray(a=word_matrix_columns_index, dtype=np.int32)
             data_to_insert = np.ones(len(word_matrix_rows_index), dtype=np.int8)
             possible_genre_matrix = csr_matrix((data_to_insert, (rows_index, cols_index)),
-                                     shape=(len(self.tags_seen_in_train), self.feature_vector_len))
+                                               shape=(len(self.tags_seen_in_train), self.feature_vector_len))
 
             # Initialize the dict where key : (sentence,word), value : word_matrix
             # original keys - [(device_id, node_index)] - BUT assuming that for each view we have a unigue index
 
-            self.possible_generes_per_node_matrix[ node_index] = possible_genre_matrix
+            self.possible_generes_per_node_matrix[node_index] = possible_genre_matrix
 
             prev2_node_label = prev1_node_label
             prev1_node_label = node_label
@@ -138,15 +143,14 @@ class Model:
         rows_index = np.asarray(a=training_matrix_rows_index, dtype=np.int32)
         cols_index = np.asarray(a=training_matrix_columns_index, dtype=np.int32)
         data_to_insert = np.ones(len(training_matrix_rows_index), dtype=np.int8)
-        self.training_matrix = csr_matrix((data_to_insert, (rows_index, cols_index)),
-                                              shape=(training_matrix_rows_index_counter, self.feature_vector_len))
+        self.train_feature_matrix = csr_matrix((data_to_insert, (rows_index, cols_index)),
+                                               shape=(training_matrix_rows_index_counter, self.feature_vector_len))
 
         logger.info("create_features_vector_for_train <-------------- ")
 
         logger.debug("DependencyParsing: build_features_head_modifier <--------------")
 
-
-    def potetial_features(node, prev1_node_label, prev2_node_label, target_genere):
+    def potetial_features(self, node, prev1_node_label, prev2_node_label, target_genere):
         """
 
         :param prev1_node_label: genre of the previous view - string
@@ -162,7 +166,7 @@ class Model:
         :param list(string) feature_list: potential features names
         :return:
         """
-        feature_vec = np.zeros(len(self.feature_position))
+        feature_vec = np.zeros(len(self.features_position))
 
         for feature in feature_list:
             if feature in self.features_position:
