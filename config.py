@@ -5,10 +5,14 @@ sub_dirs = ["logs", "evaluations", "dict", "weights"]
 log_dir = 'logs'
 run_name = 'test'
 output_dir = 'output'
+data_dir = 'data'
 
 # data files
 daily_prog_data = os.path.join("data", "DailyProgramData_04012015.csv")
-
+viewing_data_name = 'viewing.pkl'
+demo_file_name = 'demographic_features.csv'
+device_house_dict = 'dev_house_dict.pkl'
+house_device_dict = 'house_dev_dict.pkl'
 
 # features:
 """
@@ -62,17 +66,17 @@ genere_cols = {
     ('part_of_day', 'Program Genre'): ['interact', 'i1'],
     ('prev_1_genre', 'Program Genre'): ['interact', 'g1'],
     ('prev_2_genre', 'prev_1_genre', 'Program Genre'): ['double_interact', 'g2'],
-    ('Station Number', 'Program Genre'): ['interact', 'c1']
+    # ('Station Number', 'Program Genre'): ['interact', 'c1']
 }
 
 thresholds = {
-    'Program Genre': 32,
-    ('part_of_day', 'event_weekday'): 32,
-    ('Program Genre', 'event_weekday'): 32,
-    ('Program Genre', 'part_of_day'): 32,
-    ('prev_1_genre', 'Program Genre'): 32,
-    ('prev_2_genre', 'prev_1_genre', 'Program Genre'): 32,
-    'Station Number': 52,
+    'Program Genre': 0,
+    ('part_of_day', 'event_weekday'): 0,
+    ('event_weekday', 'Program Genre'): 0,
+    ('part_of_day', 'Program Genre'): 0,
+    ('prev_1_genre', 'Program Genre'): 0,
+    ('prev_2_genre', 'prev_1_genre', 'Program Genre'): 0,
+    'Station Number': 0,
 }
 
 
@@ -86,6 +90,7 @@ demo_device_id = 'device_id'
 x_label = 'genre'
 x_program_genre = 'Program Genre'
 # threshold for demographic features
-min_amount_demo = 5
+min_amount_demo = 0
 household_id = 'Household ID'
 station_genre = 'c1'
+voter = 'Voter/Party'

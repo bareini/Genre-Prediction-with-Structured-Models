@@ -6,13 +6,12 @@ class Evaluate:
     def __init__(self):
         pass
 
-
-    def calc_acc_recall_precision(pred_labels, true_labels):
-    """
-    This function calculate the accuracy, recall and precision
-    :param pred_labels prediction labels, true_labels
-    :return accuracy, recall, precision
-    """
+    def calc_acc_recall_precision(self, pred_labels, true_labels):
+        """
+        This function calculate the accuracy, recall and precision
+        :param pred_labels prediction labels, true_labels
+        :return accuracy, recall, precision
+        """
         accuracy = 0
         recall = 0
         precision = 0

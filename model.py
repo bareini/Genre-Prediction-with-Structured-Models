@@ -7,6 +7,8 @@ from scipy.sparse import csr_matrix
 import numpy as np
 import config
 
+logger = logging.getLogger("dependency_parsing")
+
 
 class Model:
     """
@@ -25,7 +27,7 @@ class Model:
 
         self.type = 'MEMM'
         self.train_feature_matrix = None
-
+        self.df_cols_dict = None
         self.df_x = df_x
         self.df_demo = df_demo
         self.house_device = house_device
@@ -36,20 +38,20 @@ class Model:
         # todo: decide where to initial this
         self.all_tags_list = None
 
-        # functions as build_features_head_modifier
-        self.build_features_matrices()
         self.device_indexes_map = df_x.groupby(config.x_device_id).groups
-        self.df_demo = df_demo
-        self.df_x = df_x
 
         # todo: set
         self.tags_seen_in_train = []
         self.feature_vector_len = 0
-        self.atomic_tags = {}
+        self.atomic_tags = set()
         self.features_position = {}
         self.tags_seen_in_station = defaultdict(list)
 
         self.feature_position_counter = count()
+
+        self.init_features()
+        # functions as build_features_head_modifier
+        self.build_features_matrices()
 
     def init_features(self):
         """
@@ -69,11 +71,11 @@ class Model:
                     self.all_tags_list = self.df_x[col].unique().tolist()
                     for genres in self.df_x[col].unique():
                         self.atomic_tags.update(set(genres.split(',')))
-            if action == 'unique':
+            elif action == 'unique':
                 self.features_position.update(
                     {"{}_{}".format(prefix, feature_val): next(self.feature_position_counter)
                      for feature_val in self.df_x[col].astype(str).unique()})
-            if action == 'interact':
+            elif action == 'interact':
                 col_1, col_2 = col
                 temp_df = self.df_x.groupby([col_1, col_2], as_index=True).size()
                 if prefix == config.station_genre:
@@ -85,14 +87,14 @@ class Model:
                 self.features_position.update(
                     {"{}_{}_{}".format(prefix, col1, col2): next(self.feature_position_counter)
                      for col1, col2, val in temp_df.values})
-            if action == 'double_interact':
+            elif action == 'double_interact':
                 col_1, col_2, col_3 = col
                 temp_df = self.df_x.groupby([col_1, col_2, col_3], as_index=True).size()  # .reset_index()
                 temp_df = temp_df[temp_df > config.thresholds[col]].reset_index()
                 self.features_position.update(
                     {"{}_{}_{}_{}".format(prefix, col1, col2, col3): next(self.feature_position_counter)
                      for col1, col2, col3, val in temp_df.values})
-        self.feature_from_demo()    # run the demographic feature init
+        self.feature_from_demo()  # run the demographic feature init
         self.feature_vector_len = next(self.feature_position_counter)
 
     def build_features_matrices(self):
@@ -106,37 +108,39 @@ class Model:
         """
         # todo: make sure that df_x is sorted by device -> time
         logger.debug("DependencyParsing: build_features_head_modifier -------------->")
+        # todo: question everything
+        self.df_cols_dict = {'x': {name_: id_ for id_, name_ in enumerate(self.df_x.columns)}}
+        self.df_cols_dict.update({'demo': {name_: id_ for id_, name_ in enumerate(self.df_demo.columns)}})
 
-        df_cols_dict = {'x': {name_: id_ for id_, name_ in enumerate(self.df_x.columns)}}
-        df_cols_dict.update({'demo': {name_: id_ for id_, name_ in enumerate(self.df_demo.columns)}})
+        x_matrix = self.df_x.as_matrix()    # type: np.matrix
 
-        x_matrix = self.df_x.as_matrix()
-
+        relevant_demo_id = None
+        demo_features = None
         relevant_demo = None
         device_id = None
         prev1_node_label = None
         prev2_node_label = None
+        demo_feature_count = 0
 
-        training_matrix_rows_index = 0
-        training_matrix_columns_index = 0
+        # indexes for the training ('truth') matrix
         training_matrix_rows_index_counter = 0
+        training_matrix_rows_index = []
+        training_matrix_columns_index = []
 
-        for node in x_matrix:
+        for idx in range(x_matrix.shape[0]):
 
-            node_index = df_cols_dict['x'][config.x_row_index]
-            node_label = df_cols_dict['x'][config.x_label]
+            node = x_matrix[idx]
+            node_index = node[self.df_cols_dict['x'][config.x_row_index]]
+            node_label = node[self.df_cols_dict['x'][config.x_program_genre]]
 
-            if device_id != node[df_cols_dict['x'][config.x_device_id]]:
-                device_id = node[df_cols_dict['x'][config.x_device_id]]
+            if device_id != node[self.df_cols_dict['x'][config.x_device_id]]:
+                device_id = node[self.df_cols_dict['x'][config.x_device_id]]
                 # relevant_demo = self.df_demo.query("{}=={}".format(config.demo_device_id, device_id)).values
-                if device_id != None:
+                if device_id is not None:
                     relevant_demo_id = self.device_house[device_id]
-                    demo_features, demo_counter = self.demo_positions(self, relevant_demo_id)
+                    demo_features, demo_feature_count = self.demo_positions(relevant_demo_id)
 
-            # indexes for the training ('truth') matrix
-            training_matrix_rows_index_counter = 0
-            training_matrix_rows_index = []
-            training_matrix_columns_index = []
+
 
             # indexes for possible labels matrix
             word_matrix_rows_index_counter = 0
@@ -152,9 +156,9 @@ class Model:
                 # todo: fearture creater that returns the relevant indexes
 
                 # used to be self.features.create_features
-                current_features, ones_counter = self.node_positions(device_id, relevant_demo_id, possible_genre)
+                current_features, ones_counter = self.node_positions(node_index, possible_genre)
                 current_features.extend(demo_features)
-                ones_counter += demo_counter
+                ones_counter += demo_feature_count
 
                 # for feature in current_features:
                 #     if feature in self.features_position:
@@ -163,7 +167,7 @@ class Model:
                 #         columns_index.append(self.features_position[feature])
 
                 additional_row_index = [genere_counter] * ones_counter
-                word_matrix_rows_index.append(additional_row_index)
+                word_matrix_rows_index.extend(additional_row_index)
                 columns_index.extend(current_features)
 
                 word_matrix_columns_index += columns_index
@@ -178,7 +182,7 @@ class Model:
             cols_index = np.asarray(a=word_matrix_columns_index, dtype=np.int32)
             data_to_insert = np.ones(len(word_matrix_rows_index), dtype=np.int8)
             possible_genre_matrix = csr_matrix((data_to_insert, (rows_index, cols_index)),
-                                               shape=(len(self.tags_seen_in_train), self.feature_vector_len))
+                                               shape=(len(self.all_tags_list), self.feature_vector_len))
 
             # Initialize the dict where key : (sentence,word), value : word_matrix
             # original keys - [(device_id, node_index)] - BUT assuming that for each view we have a unigue index
@@ -198,7 +202,7 @@ class Model:
 
         logger.debug("DependencyParsing: build_features_head_modifier <--------------")
 
-    def node_positions(self, device_id, relevant_demo_id, target_genere):
+    def node_positions(self, device_id, target_genere):
         """
         extract all potential features for a specific node before selection
 
@@ -212,60 +216,58 @@ class Model:
 
         # todo: same for demographic features
 
-        node = self.df_x[device_id]
+        node = self.df_x.loc[device_id]
 
         feature_vector_positions = []
-        counter = count()
         for col, (action, prefix) in config.col_action.items():
-            if col not in config.genere_cols:
-                if action == 'unique':
-                    name =  "{}_{}".format(prefix, str(node[col]))
+            if col in config.genere_cols:
+                continue
+            if action == 'unique':
+                name = "{}_{}".format(prefix, node[col])
 
-                elif action == 'interact':
-                    col_1, col_2 = col
-                    name = "{}_{}_{}".format(prefix, col_1, col_2)
+            elif action == 'interact':
+                col_1, col_2 = col
+                name = "{}_{}_{}".format(prefix, node[col_1], node[col_2])
 
-                elif action == 'double_interact':
-                    col_1, col_2, col_3 = col
-                    name = "{}_{}_{}_{}".format(prefix, col_1, col_2, col_3)
+            elif action == 'double_interact':
+                col_1, col_2, col_3 = col
+                name = "{}_{}_{}_{}".format(prefix, node[col_1], node[col_2], node[col_3])
 
             if name in self.features_position:
                 feature_vector_positions.append(self.features_position[name])
-                next(counter)
 
         for col in config.genere_cols:
+            action, prefix = config.col_action[col]
             # can be only 'Program Genre'
-            if action == 'unique':
+            if action == 'unique' or action == 'counter':
                 name = "{}_{}".format(prefix, target_genere)
 
             elif action == 'interact':
                 col_1, col_2 = col
-                name = "{}_{}_{}".format(prefix, col_1, target_genere)
+                name = "{}_{}_{}".format(prefix, node[col_1], target_genere)
 
             elif action == 'double_interact':
                 col_1, col_2, col_3 = col
-                name = "{}_{}_{}_{}".format(prefix, col_1, col_2, target_genere)
+                name = "{}_{}_{}_{}".format(prefix, node[col_1], node[col_2], target_genere)
 
             if name in self.features_position:
                 feature_vector_positions.append(self.features_position[name])
-                next(counter)
 
-        return feature_vector_positions, next(counter) - 1
+        return feature_vector_positions, len(feature_vector_positions)
 
     def demo_positions(self, relevant_demo_id):
 
-        counter = count()
-
-        demo = self.df_demo[relevant_demo_id]
+        demo = self.df_demo.loc[self.df_demo[config.household_id] == relevant_demo_id].values.flatten()
         feature_vector_positions = []
 
-        for demo_col in demo.columns:
-            name = 'd_{}'.format(demo[demo_col])
-            if name in self.features_position:
+        for demo_col in self.df_cols_dict['demo'].keys():
+            if demo_col == config.household_id or demo_col == config.voter:
+                continue
+            name = 'd_{}'.format(demo_col)
+            if demo[self.df_cols_dict['demo'][demo_col]] == 1 and name in self.features_position:
                 feature_vector_positions.append(self.features_position[name])
-                next(counter)
 
-        return feature_vector_positions, next(counter) - 1
+        return feature_vector_positions, len(feature_vector_positions)
 
     def feature_vec_builder(self, feature_list):
 
@@ -296,11 +298,11 @@ class Model:
             dev_per_house[key] = len(self.house_device[key])
 
         # replace every 1 in row for the number of device
-        for key, value in dev_per_house.items():
-            self.df_demo.loc[[key]] = self.df_demo.loc[[key]].replace(1, value)
+        # for key, value in dev_per_house.items():
+        #     self.df_demo.loc[[key]] = self.df_demo.loc[[key]].replace(1, value)
 
         # create dictionary for feature and how many device with this feature
-        temp_matrix = self.df_demo.drop(columns='Household ID').as_matrix()
+        temp_matrix = self.df_demo.drop(columns=config.household_id).as_matrix()
         temp_matrix = temp_matrix.sum(axis=0)
         self.features_position.update({'d_{}'.format(coll): next(self.feature_position_counter)
                                        for coll in
