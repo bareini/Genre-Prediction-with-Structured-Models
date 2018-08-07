@@ -49,8 +49,17 @@ col_action = {
     'completion_bins': ['unique', 'p2'],
     'Station Number': ['counter', 'p3'],
     ('part_of_day', 'event_weekday'): ['interact', 't3'],
-    ('Program Genre', 'event_weekday'): ['interact', 'i0'],
-    ('Program Genre', 'part_of_day'): ['interact', 'i1'],
+    ('event_weekday', 'Program Genre'): ['interact', 'i0'],
+    ('part_of_day', 'Program Genre'): ['interact', 'i1'],
+    ('prev_1_genre', 'Program Genre'): ['interact', 'g1'],
+    ('prev_2_genre', 'prev_1_genre', 'Program Genre'): ['double_interact', 'g2']
+}
+# 'Program Genre' must appear last in the feature name string
+genere_cols = {
+
+    'Program Genre': ['counter', 'g0'],
+    ('event_weekday', 'Program Genre'): ['interact', 'i0'],
+    ('part_of_day', 'Program Genre'): ['interact', 'i1'],
     ('prev_1_genre', 'Program Genre'): ['interact', 'g1'],
     ('prev_2_genre', 'prev_1_genre', 'Program Genre'): ['double_interact', 'g2'],
     ('Station Number', 'Program Genre'): ['interact', 'c1']
@@ -78,4 +87,5 @@ x_label = 'genre'
 x_program_genre = 'Program Genre'
 # threshold for demographic features
 min_amount_demo = 5
+household_id = 'Household ID'
 station_genre = 'c1'
