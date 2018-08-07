@@ -24,7 +24,10 @@ feature_type_map = {
      g_1: 2-gram
      g_2  3-gram
     # program related:
-     
+     p_0: duration
+     p_1: view duration
+     p_2: program completion
+     p_3: station number
     # interactions:
      i_0: g_0 * t_0
      i_1: g_0 * t_1
@@ -33,6 +36,8 @@ feature_type_map = {
      i_4: g_2 * t_0
      i_5: g_2 * t_1
      
+     # commons
+     c1: p_3 * g_0
  } 
 """
 col_action = {
@@ -42,21 +47,23 @@ col_action = {
     'duration_bins': ['unique', 'p0'],
     'view_bins': ['unique', 'p1'],
     'completion_bins': ['unique', 'p2'],
+    'Station Number': ['counter', 'p3'],
     ('part_of_day', 'event_weekday'): ['interact', 't3'],
     ('Program Genre', 'event_weekday'): ['interact', 'i0'],
     ('Program Genre', 'part_of_day'): ['interact', 'i1'],
     ('prev_1_genre', 'Program Genre'): ['interact', 'g1'],
-    ('prev_2_genre', 'prev_1_genre', 'Program Genre'): ['double_interact', 'g2']
+    ('prev_2_genre', 'prev_1_genre', 'Program Genre'): ['double_interact', 'g2'],
+    ('Station Number', 'Program Genre'): ['interact', 'c1']
 }
 
-thrash_holds = {
-    'Program Genre': 30,
-    ('part_of_day', 'event_weekday'): 30,
-    ('Program Genre', 'event_weekday'): 30,
-    ('Program Genre', 'part_of_day'): 30,
-    ('prev_1_genre', 'Program Genre'): 30,
-    ('prev_2_genre', 'prev_1_genre', 'Program Genre'): 30
-
+thresholds = {
+    'Program Genre': 32,
+    ('part_of_day', 'event_weekday'): 32,
+    ('Program Genre', 'event_weekday'): 32,
+    ('Program Genre', 'part_of_day'): 32,
+    ('prev_1_genre', 'Program Genre'): 32,
+    ('prev_2_genre', 'prev_1_genre', 'Program Genre'): 32,
+    'Station Number': 52,
 }
 
 
@@ -68,5 +75,7 @@ x_row_index = 'df_id'
 x_device_id = 'Device ID'
 demo_device_id = 'device_id'
 x_label = 'genre'
+x_program_genre = 'Program Genre'
 # threshold for demographic features
 min_amount_demo = 5
+station_genre = 'c1'
