@@ -130,6 +130,8 @@ class Model:
                 # relevant_demo = self.df_demo.query("{}=={}".format(config.demo_device_id, device_id)).values
                 if device_id != None:
                     relevant_demo_id = self.device_house[device_id]
+                    demo_features, demo_counter = self.demo_positions(self, relevant_demo_id)
+
             # indexes for the training ('truth') matrix
             training_matrix_rows_index_counter = 0
             training_matrix_rows_index = []
@@ -150,6 +152,8 @@ class Model:
 
                 # used to be self.features.create_features
                 current_features, ones_counter = self.node_positions(device_id, relevant_demo_id, possible_genre)
+                current_features.extend(demo_features)
+                ones_counter += demo_counter
 
                 # for feature in current_features:
                 #     if feature in self.features_position:
@@ -208,7 +212,6 @@ class Model:
         # todo: same for demographic features
 
         node = self.df_x[device_id]
-        demo = self.df_demo[relevant_demo_id]
 
         feature_vector_positions = []
         counter = count()
@@ -246,7 +249,22 @@ class Model:
                 feature_vector_positions.append(self.features_position[name])
                 next(counter)
 
-        return feature_vector_positions, counter
+        return feature_vector_positions, next(counter) - 1
+
+    def demo_positions(self, relevant_demo_id):
+
+        counter = count()
+
+        demo = self.df_demo[relevant_demo_id]
+        feature_vector_positions = []
+
+        for demo_col in demo.columns:
+            name = 'd_{}'.format(demo[demo_col])
+            if name in self.features_position:
+                feature_vector_positions.append(self.features_position[name])
+                next(counter)
+
+        return feature_vector_positions, next(counter) - 1
 
     def feature_vec_builder(self, feature_list):
 
