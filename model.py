@@ -3,7 +3,7 @@ import logging
 import pandas as pd
 from scipy.sparse import csr_matrix
 import numpy as np
-from collections import Counter
+from itertools import count
 import config
 
 
@@ -22,7 +22,7 @@ class Model:
         self.train_feature_matrix = None
 
         # functions as words_features_matrix - a dict which saves all possible labels for node
-        self.possible_generes_per_node_matrix = {}
+        self.possible_genres_per_node_matrix = {}
         # todo: decide where to initial this
         self.all_tags_list = None
 
@@ -33,7 +33,44 @@ class Model:
         # todo: set
         self.tags_seen_in_train = []
         self.feature_vector_len = 0
-        self.features_position = []
+        self.features_position = {}
+
+        self.feature_position_counter = count()
+
+    def init_features(self, df_demo, df_x):
+        """
+        this function initializing the self.features_position attribute, by getting all the possible combinations
+        of values in each defined feature, and if the existence of it is bigger than the threshold (in config.threshold)
+        it being saved to feature_position attribute, with a unique position
+
+        :param pd.DataFrame df_demo:
+        :param pd.DataFrame df_x:
+        :return None:
+        """
+        for col, (action, prefix) in config.col_action.items():
+            if action == 'counter':
+                # todo: take it out to function
+                temp_df = df_x[col].value_counts()
+                self.features_position.update({"{}_{}".format(prefix, feature_val): next(self.feature_position_counter)
+                                               for feature_val in temp_df[temp_df > config.thrash_holds[col]].index})
+            if action == 'unique':
+                self.features_position.update(
+                    {"{}_{}".format(prefix, feature_val): next(self.feature_position_counter)
+                     for feature_val in df_x[col].astype(str).unique()})
+            if action == 'interact':
+                col_1, col_2 = col
+                temp_df = df_x.groupby([col_1, col_2], as_index=True).size()
+                temp_df = temp_df[temp_df > config.thrash_holds[col]].reset_index()
+                self.features_position.update(
+                    {"{}_{}_{}".format(prefix, col1, col2): next(self.feature_position_counter)
+                     for col1, col2, val in temp_df.values})
+            if action == 'double_interact':
+                col_1, col_2, col_3 = col
+                temp_df = df_x.groupby([col_1, col_2, col_3], as_index=True).size()  # .reset_index()
+                temp_df = temp_df[temp_df > config.thrash_holds[col]].reset_index()
+                self.features_position.update(
+                    {"{}_{}_{}_{}".format(prefix, col1, col2, col3): next(self.feature_position_counter)
+                     for col1, col2, col3, val in temp_df.values})
 
     def build_features_matrices(self, df_demo, df_x):
         """
@@ -108,7 +145,6 @@ class Model:
                 # word_matrix = csr_matrix((data_to_insert, (rows_index, cols_index)),
                 #                          shape=(len(tree), self.feature_vector_len))
 
-
                 # used to be self.features.create_features
                 current_features = self.potetial_features(node, prev1_node_label, prev2_node_label, possible_genre)
 
@@ -135,7 +171,7 @@ class Model:
             # Initialize the dict where key : (sentence,word), value : word_matrix
             # original keys - [(device_id, node_index)] - BUT assuming that for each view we have a unigue index
 
-            self.possible_generes_per_node_matrix[node_index] = possible_genre_matrix
+            self.possible_genres_per_node_matrix[node_index] = possible_genre_matrix
 
             prev2_node_label = prev1_node_label
             prev1_node_label = node_label
@@ -176,6 +212,7 @@ class Model:
 
     def feature_from_demo(self, house_dev_dict, df_demographic):
         """
+        :param pd.DataFrame df_demographic:
         :param house_dev_dict dictionary devices for every house
                df_demographic
         :return feature_demo dictionary the names of demographic feature
@@ -192,9 +229,7 @@ class Model:
         # create dictionary for feature and how many device with this feature
         l = df_demographic[df_demographic.columns].sum(axis=0).to_dict()
         feature_demo = [key for (key, val) in l.items() if val > config.min_amount_demo]
-        feature_demo = {key: idx for idx, key in enumerate(feature_demo)}
-
-        return feature_demo
+        self.features_position.update({key: next(self.feature_position_counter) for key in feature_demo})
 
 
 if __name__ == '__main__':
