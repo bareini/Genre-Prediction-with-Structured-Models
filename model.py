@@ -93,6 +93,7 @@ class Model:
                     {"{}_{}_{}_{}".format(prefix, col1, col2, col3): next(self.feature_position_counter)
                      for col1, col2, col3, val in temp_df.values})
         self.feature_from_demo()    # run the demographic feature init
+        self.feature_vector_len = next(self.feature_position_counter)
 
     def build_features_matrices(self):
         """
