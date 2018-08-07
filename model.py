@@ -29,6 +29,11 @@ class Model:
         self.build_features_matrices(df_demo, df_x)
         self.device_indexes_map = df_x.groupby(config.x_device_id).groups
 
+        # todo: set
+        self.tags_seen_in_train = []
+        self.feature_vector_len = 0
+        self.features_position = []
+
 
     def build_features_matrices(self, df_demo, df_x):
         """
@@ -49,6 +54,10 @@ class Model:
         device_id = None
         prev1_node_label = None
         prev2_node_label = None
+
+        training_matrix_rows_index = 0
+        training_matrix_columns_index = 0
+        training_matrix_rows_index_counter = 0
 
         for node in x_matrix:
 
@@ -138,7 +147,7 @@ class Model:
         rows_index = np.asarray(a=training_matrix_rows_index, dtype=np.int32)
         cols_index = np.asarray(a=training_matrix_columns_index, dtype=np.int32)
         data_to_insert = np.ones(len(training_matrix_rows_index), dtype=np.int8)
-        self.training_matrix = csr_matrix((data_to_insert, (rows_index, cols_index)),
+        self.train_feature_matrix = csr_matrix((data_to_insert, (rows_index, cols_index)),
                                               shape=(training_matrix_rows_index_counter, self.feature_vector_len))
 
         logger.info("create_features_vector_for_train <-------------- ")
@@ -146,7 +155,7 @@ class Model:
         logger.debug("DependencyParsing: build_features_head_modifier <--------------")
 
 
-    def potetial_features(node, prev1_node_label, prev2_node_label, target_genere):
+    def potetial_features( self, node, prev1_node_label, prev2_node_label, target_genere):
         """
 
         :param prev1_node_label: genre of the previous view - string
@@ -162,7 +171,7 @@ class Model:
         :param list(string) feature_list: potential features names
         :return:
         """
-        feature_vec = np.zeros(len(self.feature_position))
+        feature_vec = np.zeros(len(self.features_position))
 
         for feature in feature_list:
             if feature in self.features_position:
