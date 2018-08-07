@@ -27,8 +27,10 @@ class Model:
         self.all_tags_list = None
 
         # functions as build_features_head_modifier
-        self.build_features_matrices(df_demo, df_x)
+        self.build_features_matrices()
         self.device_indexes_map = df_x.groupby(config.x_device_id).groups
+        self.df_demo = df_demo
+        self.df_x = df_x
 
         # todo: set
         self.tags_seen_in_train = []
@@ -39,8 +41,8 @@ class Model:
 
     def init_features(self, df_demo, df_x):
         """
-        this function initializing the self.features_position attribute, by getting all the possible combinations
-        of values in each defined feature, and if the existence of it is bigger than the threshold (in config.threshold)
+        this function initializes the self.features_position attribute, by getting all the possible
+        values in each defined feature, and if the existence of it is bigger than the threshold (in config.threshold)
         it being saved to feature_position attribute, with a unique position
 
         :param pd.DataFrame df_demo:
@@ -72,8 +74,10 @@ class Model:
                     {"{}_{}_{}_{}".format(prefix, col1, col2, col3): next(self.feature_position_counter)
                      for col1, col2, col3, val in temp_df.values})
 
-    def build_features_matrices(self, df_demo, df_x):
+    def build_features_matrices(self):
         """
+        Construct train_feature_matrix - a training matrix of actual genere sequences as they appear in the data
+        and mini matrices for per node of all possible genere - possible_genres_per_node_matrix
 
         :param df_demo:
         :param df_x:
@@ -82,10 +86,10 @@ class Model:
         # todo: make sure that df_x is sorted by device -> time
         logger.debug("DependencyParsing: build_features_head_modifier -------------->")
 
-        df_cols_dict = {'x': {name_: id_ for id_, name_ in enumerate(df_x.columns)}}
-        df_cols_dict.update({'demo': {name_: id_ for id_, name_ in enumerate(df_demo.columns)}})
+        df_cols_dict = {'x': {name_: id_ for id_, name_ in enumerate(self.df_x.columns)}}
+        df_cols_dict.update({'demo': {name_: id_ for id_, name_ in enumerate(self.df_demo.columns)}})
 
-        x_matrix = df_x.as_matrix()
+        x_matrix = self.df_x.as_matrix()
 
         relevant_demo = None
         device_id = None
@@ -103,8 +107,9 @@ class Model:
 
             if device_id != node[df_cols_dict['x'][config.x_device_id]]:
                 device_id = node[df_cols_dict['x'][config.x_device_id]]
-                relevant_demo = df_demo.query("{}=={}".format(config.demo_device_id, device_id)).values
-
+                # relevant_demo = self.df_demo.query("{}=={}".format(config.demo_device_id, device_id)).values
+                if device_id != None:
+                    relevant_demo_id = self.device_house[device_id]
             # indexes for the training ('truth') matrix
             training_matrix_rows_index_counter = 0
             training_matrix_rows_index = []
@@ -122,37 +127,19 @@ class Model:
                 # todo: create a feature class
                 # todo: create the feature position builder
                 # todo: fearture creater that returns the relevant indexes
-                #     current_features = self.features.create_features(modifier, possible_head, tree)
-                #     for feature in current_features:
-                #         if feature in self.features_position:
-                #             word_matrix_rows_index.append(possible_genre.counter)
-                #             columns_index.append(self.features_position[feature])
-                #
-                #     word_matrix_columns_index += columns_index
-                #
-                #     # True label
-                #     if node[node_index] == node[node_label]:
-                #         rows_index = np.zeros(shape=len(columns_index), dtype=np.int32)
-                #         cols_index = np.asarray(a=columns_index, dtype=np.int32)
-                #         data_to_insert = np.ones(len(columns_index), dtype=np.int8)
-                #         train_word_vector = csr_matrix((data_to_insert, (rows_index, cols_index)),
-                #                                        shape=(1, self.feature_vector_len))
-                #         self.training_features_matrix[(sentence_num, modifier.counter)] = train_word_vector
-                #
-                # rows_index = np.asarray(a=word_matrix_rows_index, dtype=np.int32)
-                # cols_index = np.asarray(a=word_matrix_columns_index, dtype=np.int32)
-                # data_to_insert = np.ones(len(word_matrix_rows_index), dtype=np.int8)
-                # word_matrix = csr_matrix((data_to_insert, (rows_index, cols_index)),
-                #                          shape=(len(tree), self.feature_vector_len))
 
                 # used to be self.features.create_features
-                current_features = self.potetial_features(node, prev1_node_label, prev2_node_label, possible_genre)
+                current_features, ones_counter = self.node_positions(device_id, relevant_demo_id, possible_genre)
 
-                for feature in current_features:
-                    if feature in self.features_position:
-                        # the indecator location in the mini matrix - row (same for all) and column (the features from the map)
-                        word_matrix_rows_index.append(genere_counter)
-                        columns_index.append(self.features_position[feature])
+                # for feature in current_features:
+                #     if feature in self.features_position:
+                #         # the indecator location in the mini matrix - row (same for all) and column (the features from the map)
+                #         word_matrix_rows_index.append(genere_counter)
+                #         columns_index.append(self.features_position[feature])
+
+                additional_row_index = [genere_counter] * ones_counter
+                word_matrix_rows_index.append(additional_row_index)
+                columns_index.extend(current_features)
 
                 word_matrix_columns_index += columns_index
 
@@ -186,19 +173,65 @@ class Model:
 
         logger.debug("DependencyParsing: build_features_head_modifier <--------------")
 
-    def potetial_features(self, node, prev1_node_label, prev2_node_label, target_genere):
+    def node_positions(self, device_id, relevant_demo_id, target_genere):
         """
+        extract all potential features for a specific node before selection
+
+        :param node the line from the dfs which describes a specific view
 
         :param prev1_node_label: genre of the previous view - string
         :param prev2_node_label:  genre of the 2-previous view - string
         :param target_genere:  the genere we are considering
         :return: a list of string which represents the potential - features for verifying weather its
         """
-        # todo: take feature formats from dafna's code
+
+        # todo: same for demographic features
+
+        node = self.df_x[device_id]
+        demo = self.df_demo[relevant_demo_id]
+
+        feature_vector_positions = []
+        counter = count()
+        for col, (action, prefix) in config.col_action.items():
+            if col not in config.genere_cols:
+                if action == 'unique':
+                    name =  "{}_{}".format(prefix, str(node[col]))
+
+                elif action == 'interact':
+                    col_1, col_2 = col
+                    name = "{}_{}_{}".format(prefix, col_1, col_2)
+
+                elif action == 'double_interact':
+                    col_1, col_2, col_3 = col
+                    name = "{}_{}_{}_{}".format(prefix, col_1, col_2, col_3)
+
+            if name in self.features_position:
+                feature_vector_positions.append(self.features_position[name])
+                next(counter)
+
+        for col in config.genere_cols:
+            # can be only 'Program Genre'
+            if action == 'unique':
+                name = "{}_{}".format(prefix, target_genere)
+
+            elif action == 'interact':
+                col_1, col_2 = col
+                name = "{}_{}_{}".format(prefix, col_1, target_genere)
+
+            elif action == 'double_interact':
+                col_1, col_2, col_3 = col
+                name = "{}_{}_{}_{}".format(prefix, col_1, col_2, target_genere)
+
+            if name in self.features_position:
+                feature_vector_positions.append(self.features_position[name])
+                next(counter)
+
+        return feature_vector_positions, counter
 
     def feature_vec_builder(self, feature_list):
 
         """
+        NOT SURE IF NEEDED - creates a feature vector from a feature list
         :param list(string) feature_list: potential features names
         :return:
         """
