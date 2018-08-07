@@ -35,6 +35,31 @@ feature_type_map = {
      
  } 
 """
+col_action = {
+    'Program Genre': ['counter', 'g0'],
+    'event_weekday': ['unique', 't0'],
+    'part_of_day': ['unique', 't1'],
+    'duration_bins': ['unique', 'p0'],
+    'view_bins': ['unique', 'p1'],
+    'completion_bins': ['unique', 'p2'],
+    ('part_of_day', 'event_weekday'): ['interact', 't3'],
+    ('Program Genre', 'event_weekday'): ['interact', 'i0'],
+    ('Program Genre', 'part_of_day'): ['interact', 'i1'],
+    ('prev_1_genre', 'Program Genre'): ['interact', 'g1'],
+    ('prev_2_genre', 'prev_1_genre', 'Program Genre'): ['double_interact', 'g2']
+}
+
+thrash_holds = {
+    'Program Genre': 30,
+    ('part_of_day', 'event_weekday'): 30,
+    ('Program Genre', 'event_weekday'): 30,
+    ('Program Genre', 'part_of_day'): 30,
+    ('prev_1_genre', 'Program Genre'): 30,
+    ('prev_2_genre', 'prev_1_genre', 'Program Genre'): 30
+
+}
+
+
 # genres
 # genere_map =
 
