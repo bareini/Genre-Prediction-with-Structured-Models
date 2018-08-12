@@ -56,7 +56,8 @@ col_action = {
     ('event_weekday', 'Program Genre'): ['interact', 'i0'],
     ('part_of_day', 'Program Genre'): ['interact', 'i1'],
     ('prev_1_genre', 'Program Genre'): ['interact', 'g1'],
-    ('prev_2_genre', 'prev_1_genre', 'Program Genre'): ['double_interact', 'g2']
+    ('prev_2_genre', 'prev_1_genre', 'Program Genre'): ['double_interact', 'g2'],
+    ('Station Number', 'Program Genre'): ['interact', 'c1']
 }
 # 'Program Genre' must appear last in the feature name string
 genere_cols = {
@@ -66,7 +67,7 @@ genere_cols = {
     ('part_of_day', 'Program Genre'): ['interact', 'i1'],
     ('prev_1_genre', 'Program Genre'): ['interact', 'g1'],
     ('prev_2_genre', 'prev_1_genre', 'Program Genre'): ['double_interact', 'g2'],
-    # ('Station Number', 'Program Genre'): ['interact', 'c1']
+    ('Station Number', 'Program Genre'): ['interact', 'c1']
 }
 
 thresholds = {

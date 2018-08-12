@@ -8,6 +8,7 @@ from sklearn.model_selection import KFold
 
 import config
 from model import Model
+import MLpreceptron
 # from viterbi_ML import viterbi
 from evaluate import Evaluate
 from memm_parameters_learn import ParametersMEMM
@@ -72,8 +73,8 @@ import pandas as pd
 
 
 # def main(train_file_to_use, test_file_to_use, test_type, features_combination_list, lamda, comp):
-    # for perm in itertools.combinations(features_combination_list_sub, 4):
-    #    features_combination_list.append(list(perm))
+# for perm in itertools.combinations(features_combination_list_sub, 4):
+#    features_combination_list.append(list(perm))
 # def main():
 #     # start all combination of features
 #     features_combination_list = []
@@ -171,6 +172,17 @@ if __name__ == "__main__":
                   df_x=df_x.loc[df_x[config.x_device_id] == '0000000050f3'],
                   house_device=house_device_dict,
                   device_house=device_house_dict)
+    # Baselines - baseline predictions
+    most_common = MLpreceptron.return_common_stupid(df_x['Program Genre'])
+    print(most_common)
+
+    # preceptron_clf =  MLpreceptron.MulticlasslabelPerceptron(model.train_feature_matrix, model.true_genres, list(set(model.true_genres)) model.atomic_tags, 10)
+
+
+
+    # baseline1_perd - simply most common
+
+
     # train_file = directory + 'data/train_small.wtag'
     # test_file = directory + 'data/test_small.wtag'
     # comp_file = directory + 'data/comp_small.words'

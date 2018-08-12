@@ -70,6 +70,13 @@ def error_factor(x,y):
     return factor
 
 
+def return_common_stupid(label_series):
+    max_value = label_series.value_counts().idxmax()
+
+    pred = [max_value] * len(label_series)
+
+    return pred
+
 # should get the possiable label list - ordered
 # examples shouls be splitted
 
@@ -118,7 +125,7 @@ class MulticlasslabelPerceptron():
         # label_index = predict_list.index(max(predict_list))
         # return self.reverse_label_mapping[label_index]
 
-        predict_mat = np.dot( self.weight, x)
+        predict_mat = np.dot(self.weight, x)
         max_perdition = predict_mat.max(0)  # hopefully max per row
 
         return max_perdition
