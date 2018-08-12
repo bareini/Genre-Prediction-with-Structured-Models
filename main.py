@@ -185,8 +185,13 @@ if __name__ == "__main__":
 
     preceptron_pred = preceptron_clf.predict_genere(model.train_feature_matrix)
 
-    print('bla')
+    memm = ParametersMEMM(model, 0.1)
 
+    weights_filename = os.path.join(directory, config.weights_file_name)
+    results_filename = os.path.join(directory, config.results_file_name)
+
+    memm.gradient_decent(weights_filename, results_filename)
+    # memm_pred = memm.gradient_decent(weights_filename, results_filename)
 
 
     # baseline1_perd - simply most common

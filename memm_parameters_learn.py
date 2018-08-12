@@ -71,11 +71,13 @@ class ParametersMEMM:
         results = minimize(
             fun=self.obj_function,
             x0=self.w ,
+            method='L-BFGS-B',
             jac=self.gradient,
             options={'disp': True, 'maxiter': 40, 'ftol': 1e2 * np.finfo(float).eps}
         )
-        self.w = results
+        self.w = results.x
         with open(res_file_name, "w") as file_object:
-            file_object.write("{}".format(results[1]))
-            file_object.write("{}".format(results[2]))
-        np.savetxt(fname=vec_file_name, X=results[0], delimiter=',')
+            # file_object.write("{}".format(results[1]))
+            # file_object.write("{}".format(results[2]))
+            file_object.write("{}".format(results))
+        np.savetxt(fname=vec_file_name, X=results.x, delimiter=',')
