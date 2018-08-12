@@ -46,6 +46,7 @@ class Model:
         self.atomic_tags = set()
         self.features_position = {}
         self.tags_seen_in_station = defaultdict(list)
+        self.true_genres = df_x['Program Genre'].tolist()
 
         self.feature_position_counter = count()
 
