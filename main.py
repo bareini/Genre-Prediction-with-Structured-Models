@@ -171,6 +171,13 @@ if __name__ == "__main__":
     # todo: fix in the code!!!!!!@!#!@#@$#
     device_house_dict = device_house_dict[config.household_id]
 
+    threshold = round(len(df_demo.groupby(['Device ID'])) * config.train_threshold)
+    g = df_demo.groupby(['Device ID']).groups
+    dev_threshold = list(g)[threshold]
+    idx = g[dev_threshold][-1]
+    dfx_train = df_demo.loc[:idx, ]
+    dfx_test = df_demo.loc[idx + 1:, ]
+
     house_device_dict = dict(list(house_device_dict.items())[41209:41210])
     df_x_temp = df_x.loc[df_x[config.x_device_id] == '0000000050f3']
 

@@ -381,6 +381,14 @@ class Model:
                                        for coll in
                                        self.df_demo.columns[np.where(temp_matrix > config.min_amount_demo)[0]]})
 
+    def notes_per_device(self):
+        """
+
+        :return: dict the notes for every device.
+        """
+        dict_notes_per_device = self.df_x.groupby(['Device ID'])['df_id'].apply(list).to_dict()
+        return dict_notes_per_device
+
 
 if __name__ == '__main__':
     logger = logging.getLogger("dependency_parsing")
