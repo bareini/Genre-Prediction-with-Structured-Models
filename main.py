@@ -6,6 +6,7 @@ import pickle
 
 from sklearn.model_selection import KFold
 
+
 import config
 from model import Model
 import MLpreceptron
@@ -171,11 +172,13 @@ if __name__ == "__main__":
     device_house_dict = device_house_dict[config.household_id]
 
     house_device_dict = dict(list(house_device_dict.items())[41209:41210])
+    df_x_temp = df_x.loc[df_x[config.x_device_id] == '0000000050f3']
+
     model = Model(df_demo=df_demo.loc[df_demo[config.household_id] == 1471346],
-                  df_x=df_x.loc[df_x[config.x_device_id] == '0000000050f3'],
+                  df_x=df_x_temp,
                   house_device=house_device_dict,
                   device_house=device_house_dict,
-                  test_df=df_x.loc[df_x[config.x_device_id] == '0000000050f3'],
+                  test_df=df_x_temp,
                   test_demo_df=df_demo.loc[df_demo[config.household_id] == 1471346])
     # Baselines - baseline predictions
     # most_common = MLpreceptron.return_common_stupid(df_x['Program Genre'])
@@ -201,10 +204,11 @@ if __name__ == "__main__":
     # for seq in model.devices:
     #     pred = viterbi.viterbi_algorithm(seq)
     #     memm_pred.extend(pred)
-    seq = list(df_x.df_id)
+    seq = list(df_x_temp.df_id)
     pred = viterbi.viterbi_algorithm(seq)
-
-
+    print(pred)
+    accuracy_most_common, recall_most_common, precision_most_common = Evaluate.calc_acc_recall_precision(pred_labels=most_common, true_labels=list(set(model.true_genres)))
+    print(accuracy_most_common, recall_most_common, precision_most_common)
 
     # memm_pred = memm.gradient_decent(weights_filename, results_filename)
 

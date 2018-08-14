@@ -38,7 +38,7 @@ class Viterbi:
         for t in Sk_2:
             for u in Sk_1:
                 for v in Sk:
-                    features_positions = self.model.test_node_positions(device_id, v, u, t )
+                    features_positions, _ = self.model.test_node_positions(k, v, u, t )
                     features_positions.extend(demo_features)
 
                     probability_table[(t, u, v)] = np.exp(sum(weights[features_positions]))
@@ -63,33 +63,36 @@ class Viterbi:
 
         # logger.info("viterbi_algorithm --------------> ")
         # Base Case
-        pie[(0, "*", "*")] = 1.0
+        pie[(0, "**", "*")] = 1.0
 
-        for k in range(1, len(sequence)):
+        for k in range(1, len(sequence) + 1):
 
             Sk = tags_seen_in_train
             Sk_1 = tags_seen_in_train
             Sk_2 = tags_seen_in_train
 
-            current_station = self.model.test_df.loc[sequence[k], config.station_num]
+            current_station = self.model.test_df.loc[sequence[k-1], config.station_num]
 
             # if the word appeared in the training data with tags we assign this tags to S
             if current_station in tags_seen_in_station:
                 Sk = tags_seen_in_station[current_station]
 
-            if k == 1:
-                Sk_2, Sk_1 = ["*"], ["*"]
+            if k != 1:
                 prev1_sation = self.model.test_df.loc[sequence[k - 2], config.station_num]
-            elif prev1_sation in tags_seen_in_station:
-                Sk_1 = tags_seen_in_station[prev1_sation]
+                if prev1_sation in tags_seen_in_station:
+                    Sk_1 = tags_seen_in_station[prev1_sation]
+            else:
+                Sk_2, Sk_1 = ["**"], ["*"]
 
-            if k == 2:
+
+            if k > 2:
+                prev2_sation = self.model.test_df.loc[sequence[k - 3], config.station_num]
+                if prev2_sation in tags_seen_in_station:
+                    Sk_2 = tags_seen_in_station[prev2_sation]
+            elif k == 2:
                 Sk_2 = ["*"]
-                prev2_sation = self.model.test_df.loc[sequence[k - 3]]
-            elif k > 2 and prev2_sation in tags_seen_in_station:
-                Sk_2 = tags_seen_in_station[prev2_sation]
-
-            probability_table = self.probability(Sk_2, Sk_1, Sk, sequence[k], k)
+            device_id = self.model.test_df.loc[sequence[k-1], config.x_device_id]
+            probability_table = self.probability(Sk_2, Sk_1, Sk, device_id, sequence[k-1])
 
             for u in Sk_1:
                 for v in Sk:
@@ -121,7 +124,7 @@ class Viterbi:
             t[k] = bp[k + 2, t[k + 1], t[k + 2]]
 
         genre_sequence = []
-        for i in t:
+        for i in range(1, len(t)+1):
             genre_sequence.append(t[i])
 
         if n == 1:
