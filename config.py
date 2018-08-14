@@ -6,6 +6,8 @@ log_dir = 'logs'
 run_name = 'test'
 output_dir = 'output'
 data_dir = 'data'
+weights_folder = 'weights'
+results_folder = 'evaluations'
 
 # data files
 daily_prog_data = os.path.join("data", "DailyProgramData_04012015.csv")
@@ -13,6 +15,8 @@ viewing_data_name = 'viewing.pkl'
 demo_file_name = 'demographic_features.csv'
 device_house_dict = 'dev_house_dict.pkl'
 house_device_dict = 'house_dev_dict.pkl'
+weights_file_name = os.path.join(weights_folder, 'my_weights.txt')
+results_file_name = os.path.join(results_folder, 'my_results.txt')
 
 # features:
 """
