@@ -15,7 +15,7 @@ class Model:
     the model builder
     """
 
-    def __init__(self, df_demo, df_x, house_device, device_house):
+    def __init__(self, df_demo, df_x, house_device, device_house, test_df = None, test_demo_df = None):
         """
 
 
@@ -30,6 +30,9 @@ class Model:
         self.df_cols_dict = None
         self.df_x = df_x
         self.df_demo = df_demo
+        self.test_df = test_df
+        self.test_demo_df = test_demo_df
+
         self.house_device = house_device
         self.device_house = device_house
 
@@ -136,7 +139,7 @@ class Model:
 
             if device_id != node[self.df_cols_dict['x'][config.x_device_id]]:
                 device_id = node[self.df_cols_dict['x'][config.x_device_id]]
-                # relevant_demo = self.df_demo.query("{}=={}".format(config.demo_device_id, device_id)).values
+
                 if device_id is not None:
                     relevant_demo_id = self.device_house[device_id]
                     demo_features, demo_feature_count = self.demo_positions(relevant_demo_id)
@@ -203,7 +206,7 @@ class Model:
 
         logger.debug("DependencyParsing: build_features_head_modifier <--------------")
 
-    def node_positions(self, device_id, target_genere):
+    def node_positions(self, device_id, target_genere ):
         """
         extract all potential features for a specific node before selection
 
@@ -219,6 +222,7 @@ class Model:
 
         node = self.df_x.loc[device_id]
         feature_vector_positions = []
+
         for col, (action, prefix) in config.col_action.items():
 
             if col in config.genere_cols:
@@ -240,6 +244,7 @@ class Model:
         for col in config.genere_cols:
             action, prefix = config.col_action[col]
 
+
             # can be only 'Program Genre'
             if action == 'unique' or action == 'counter':
                 name = "{}_{}".format(prefix, target_genere)
@@ -252,6 +257,67 @@ class Model:
             elif action == 'double_interact':
                 col_1, col_2, col_3 = col
                 name = "{}_{}_{}_{}".format(prefix, node[col_1], node[col_2], target_genere)
+
+            if name in self.features_position:
+                feature_vector_positions.append(self.features_position[name])
+
+        return feature_vector_positions, len(feature_vector_positions)
+
+
+    def test_node_positions(self, device_id, target_genere, prev1_genre, prev2_genre ):
+        """
+        extract all potential features for a specific node before selection for test!
+
+        :param node the line from the dfs which describes a specific view
+
+        :param prev1_node_label: genre of the previous view - string
+        :param prev2_node_label:  genre of the 2-previous view - string
+        :param target_genere:  the genere we are considering
+        :return: a list of string which represents the potential - features for verifying weather its
+        """
+
+        node = self.test_df.loc[device_id]
+        feature_vector_positions = []
+
+        for col, (action, prefix) in config.col_action.items():
+
+            if col in config.genere_cols:
+                continue
+            if action == 'unique' or action == 'counter':
+                name = "{}_{}".format(prefix, node[col])
+
+            elif action == 'interact':
+                col_1, col_2 = col
+                name = "{}_{}_{}".format(prefix, node[col_1], node[col_2])
+
+            elif action == 'double_interact':
+                col_1, col_2, col_3 = col
+                name = "{}_{}_{}_{}".format(prefix, node[col_1], node[col_2], node[col_3])
+
+            if name in self.features_position:
+                feature_vector_positions.append(self.features_position[name])
+
+        for col in config.genere_cols:
+            action, prefix = config.col_action[col]
+
+
+            # can be only 'Program Genre'
+            if action == 'unique' or action == 'counter':
+                name = "{}_{}".format(prefix, target_genere)
+
+            elif action == 'interact':
+                col_1, col_2 = col
+                if prefix == 'g1':
+                    name = "{}_{}_{}".format(prefix, prev1_genre, target_genere)
+                else:
+                    name = "{}_{}_{}".format(prefix, node[col_1], target_genere)
+
+            elif action == 'double_interact':
+                col_1, col_2, col_3 = col
+                if prefix == 'g2':
+                    name = "{}_{}_{}".format(prefix, prev2_genre,prev1_genre, target_genere)
+                else:
+                    name = "{}_{}_{}_{}".format(prefix, node[col_1], node[col_2], target_genere)
 
             if name in self.features_position:
                 feature_vector_positions.append(self.features_position[name])

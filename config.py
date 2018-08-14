@@ -99,3 +99,4 @@ min_amount_demo = 0
 household_id = 'Household ID'
 station_genre = 'c1'
 voter = 'Voter/Party'
+station_num = 'Station Number'
