@@ -168,6 +168,7 @@ if __name__ == "__main__":
     # todo: fix in the code!!!!!!@!#!@#@$#
     device_house_dict = device_house_dict[config.household_id]
 
+    house_device_dict = dict(list(house_device_dict.items())[41209:41210])
     model = Model(df_demo=df_demo.loc[df_demo[config.household_id] == 1471346],
                   df_x=df_x.loc[df_x[config.x_device_id] == '0000000050f3'],
                   house_device=house_device_dict,

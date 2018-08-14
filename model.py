@@ -258,7 +258,7 @@ class Model:
 
     def demo_positions(self, relevant_demo_id):
 
-        demo = self.df_demo.loc[self.df_demo[config.household_id] == relevant_demo_id].values.flatten()
+        demo = self.df_demo.loc[relevant_demo_id].values.flatten()
         feature_vector_positions = []
 
         for demo_col in self.df_cols_dict['demo'].keys():
@@ -294,20 +294,24 @@ class Model:
         :return
         """
         # dictionary: count devices for every house
-        dev_per_house = {}
+        self.df_demo = self.df_demo.set_index(config.household_id)
+        arr_dev_per_house = np.zeros(shape=(self.df_demo.shape[0],1))
+        i = 0
         for key in self.house_device:
-            dev_per_house[key] = len(self.house_device[key])
+            if self.df_demo.index[i] == key:
+                arr_dev_per_house[i] = int(len(self.house_device[key]))
+                i += 1
 
         # replace every 1 in row for the number of device
         # for key, value in dev_per_house.items():
         #     self.df_demo.loc[[key]] = self.df_demo.loc[[key]].replace(1, value)
-
+        temp_matrix = np.multiply(self.df_demo.as_matrix(), arr_dev_per_house)
         # create dictionary for feature and how many device with this feature
-        temp_matrix = self.df_demo.drop(columns=config.household_id).as_matrix()
+        # temp_matrix = self.df_demo.drop(columns=config.household_id).as_matrix()
         temp_matrix = temp_matrix.sum(axis=0)
         self.features_position.update({'d_{}'.format(coll): next(self.feature_position_counter)
                                        for coll in
-                                       self.df_demo.columns[np.where(temp_matrix > config.min_amount_demo)[0] + 1]})
+                                       self.df_demo.columns[np.where(temp_matrix > config.min_amount_demo)[0]]})
 
 
 if __name__ == '__main__':
