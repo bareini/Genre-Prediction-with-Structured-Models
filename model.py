@@ -218,12 +218,12 @@ class Model:
         # todo: same for demographic features
 
         node = self.df_x.loc[device_id]
-
         feature_vector_positions = []
         for col, (action, prefix) in config.col_action.items():
+
             if col in config.genere_cols:
                 continue
-            if action == 'unique':
+            if action == 'unique' or action == 'counter':
                 name = "{}_{}".format(prefix, node[col])
 
             elif action == 'interact':
@@ -239,9 +239,11 @@ class Model:
 
         for col in config.genere_cols:
             action, prefix = config.col_action[col]
+
             # can be only 'Program Genre'
             if action == 'unique' or action == 'counter':
                 name = "{}_{}".format(prefix, target_genere)
+
 
             elif action == 'interact':
                 col_1, col_2 = col

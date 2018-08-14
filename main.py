@@ -14,6 +14,8 @@ from evaluate import Evaluate
 from memm_parameters_learn import ParametersMEMM
 # from Viterbi_NLP import viterbi
 import pandas as pd
+from collections import Counter
+
 
 # # open log connection
 # directory = 'C:\\Users\\RomG\\PycharmProjects\\NLP_HW1\\'
@@ -174,11 +176,23 @@ if __name__ == "__main__":
                   house_device=house_device_dict,
                   device_house=device_house_dict)
     # Baselines - baseline predictions
-    most_common = MLpreceptron.return_common_stupid(df_x['Program Genre'])
+    # most_common = MLpreceptron.return_common_stupid(df_x['Program Genre'])
+    most_common_value = Counter(model.true_genres).most_common()[0][0]
+    most_common = [most_common_value] * len(model.true_genres)
     print(most_common)
 
-    # preceptron_clf =  MLpreceptron.MulticlasslabelPerceptron(model.train_feature_matrix, model.true_genres, list(set(model.true_genres)) model.atomic_tags, 10)
+    preceptron_clf =  MLpreceptron.MulticlasslabelPerceptron(model.train_feature_matrix, model.true_genres,
+                                                             list(set(model.true_genres)), model.atomic_tags, 10)
 
+    preceptron_pred = preceptron_clf.predict_genere(model.train_feature_matrix)
+
+    memm = ParametersMEMM(model, 0.1)
+
+    weights_filename = os.path.join(directory, config.weights_file_name)
+    results_filename = os.path.join(directory, config.results_file_name)
+
+    memm.gradient_decent(weights_filename, results_filename)
+    # memm_pred = memm.gradient_decent(weights_filename, results_filename)
 
 
     # baseline1_perd - simply most common

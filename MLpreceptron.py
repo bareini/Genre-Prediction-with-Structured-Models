@@ -104,12 +104,13 @@ class MulticlasslabelPerceptron():
         # map labels
         for i in range(len(labels)):
             self.labels_mapping[i] = labels[i]
+            self.reverse_label_mapping[labels[i]] = i
             self.num_of_labels += 1
 
         # init weight matrix
         self.weight = np.zeros(shape=( self.num_of_labels, examples.shape[1]), dtype=np.float16)
 
-        #self.fit(examples, iterations)
+        self.fit(examples, true_labels, iterations)
 
     def predict(self, x):
         """
@@ -125,8 +126,9 @@ class MulticlasslabelPerceptron():
         # label_index = predict_list.index(max(predict_list))
         # return self.reverse_label_mapping[label_index]
 
-        predict_mat = np.dot(self.weight, x)
-        max_perdition = predict_mat.max(0)  # hopefully max per row
+        predict_mat = x.dot(self.weight.transpose()) # type: np.matrix
+
+        max_perdition = predict_mat.argmax(1) # hopefully max index per row
 
         return max_perdition
 
@@ -147,14 +149,14 @@ class MulticlasslabelPerceptron():
 
             res = self.predict(examples)
 
-            for j in res:
-                if res[j] != true_labels[j]:
+            for j in range(len(res)):
+                if self.labels_mapping[res[j]] != true_labels[j]:
 
                     factor = 1
                     # reduce the weight of predicted class
-                    self.update_weight(examples[j], -factor, self.labels_mapping[res[j]])
+                    self.update_weight(examples[j], -factor, res[j])
                     # increase the score of the correct class
-                    self.update_weight(examples[j], factor, self.labels_mapping[true_labels[j]])
+                    self.update_weight(examples[j], factor, self.reverse_label_mapping[true_labels[j]])
 
     def update_weight(self, x, factor, i):
         """
@@ -170,6 +172,14 @@ class MulticlasslabelPerceptron():
         #     self.weight[i][key] += sign * val
 
         self.weight[i] += x * factor
+
+    def predict_genere(self, x):
+        temp = self.predict(x)
+        pred = []
+
+        for i in range(len(temp)):
+            pred.append(self.labels_mapping[temp[i]])
+        return pred
 
 
 
