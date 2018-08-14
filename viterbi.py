@@ -2,175 +2,133 @@ import os
 import logging
 import numpy as np
 from collections import defaultdict
+import config
 from scipy.sparse import csr_matrix
 from scipy.optimize import fmin_l_bfgs_b
 from sklearn.metrics import accuracy_score, confusion_matrix as conf_matrix
+import logging
+
+logger = logging.getLogger("viterbi")
 
 
-def find_feature_vector_test_set(self, sentence, k, t, u, v):
-    """
-    Find all the places in feature vector where the entries are 1
-    :param sentence: list of word
-    :param k: current position
-    :param t: tag in position k-2
-    :param u: tag in position k-1
-    :param v: tag in position k
-    :return:
-    """
+class Viterbi:
 
-    position_in_vector = []
-    origin_word = sentence[k - 1]
-    word = origin_word.lower()
+    def __init__(self, model, weights_vec):
+        self.weights = weights_vec
+        self.model = model
 
-    # word x tag
-    pair = word + "_" + v + "_100"
-    if pair in self.features_position:
-        position_in_vector.append(self.features_position[pair])
-    # tag trigram
-    trigram = t + "_" + u + "_" + v + "_103"
-    if trigram in self.features_position:
-        position_in_vector.append(self.features_position[trigram])
-    # tag bigram
-    bigram = u + "_" + v + "_104"
-    if bigram in self.features_position:
-        position_in_vector.append(self.features_position[bigram])
+    def probability(self, Sk_2, Sk_1, Sk, device_id, k):
+        """
+        :param Sk_2:
+        :param Sk_1:
+        :param Sk:
+        :param sentence:
+        :param k: the current position
+        :return:
+        """
 
-    if self.model_type == "advanced":
-        # tag unigram
-        unigram = v + "_105"
-        if unigram in self.features_position:
-            position_in_vector.append(self.features_position[unigram])
+        probability_table = defaultdict(tuple)
+        weights = self.weights
 
-        # prefix <=4 x tag
-        prefix_list = [word[:i] + '_' + v + "_101" for i in range(1, 5)]
-        prefix_list = list(set(prefix_list))
-        for item in prefix_list:
-            if item in self.features_position:
-                position_in_vector.append(self.features_position[item])
+        # get demo features
+        if device_id is not None:
+            relevant_demo_id = self.model.device_house[device_id]
+            demo_features, demo_feature_count = self.model.demo_positions(relevant_demo_id)
 
-        # suffix <=4 x tag
-        suffix_list = [word[i:] + '_' + v + "_102" for i in range(-4, 0)]
-        suffix_list = list(set(suffix_list))
-        for item in suffix_list:
-            if item in self.features_position:
-                position_in_vector.append(self.features_position[item])
+        for t in Sk_2:
+            for u in Sk_1:
+                for v in Sk:
+                    features_positions, _ = self.model.test_node_positions(k, v, u, t )
+                    features_positions.extend(demo_features)
 
-        # current tag with previous word
-        if u != "*":
-            previous_word_current_tag = sentence[k - 2] + "_" + v + "_106"
-            if previous_word_current_tag in self.features_position:
-                position_in_vector.append(self.features_position[previous_word_current_tag])
-        # current tag with next word
-        if k != (len(sentence)):
-            next_word_current_tag = sentence[k] + "_" + v + "_107"
-            if next_word_current_tag in self.features_position:
-                position_in_vector.append(self.features_position[next_word_current_tag])
-        # is the string a number
-        if str.isdigit(word):
-            position_in_vector.append(self.features_position["is_numeric"])
-        # is the string start with upper letter
-        if str.isupper(origin_word[0]):
-            position_in_vector.append(self.features_position["is_capitalized"])
+                    probability_table[(t, u, v)] = np.exp(sum(weights[features_positions]))
 
-    return position_in_vector
+                # Constant Denominator
+                denominator = np.sum(probability_table[(t, u, v)] for v in Sk)
+                for v in Sk:
+                    probability_table[(t, u, v)] /= denominator
+
+        return probability_table
+
+    def viterbi_algorithm(self, sequence ):
+        """
+        :type sentence: list of words
+        """
+
+        tags_seen_in_train = self.model.all_tags_list
+        tags_seen_in_station = self.model.tags_seen_in_station
+
+        pie = {}
+        bp = {}
+
+        # logger.info("viterbi_algorithm --------------> ")
+        # Base Case
+        pie[(0, "**", "*")] = 1.0
+
+        for k in range(1, len(sequence) + 1):
+
+            Sk = tags_seen_in_train
+            Sk_1 = tags_seen_in_train
+            Sk_2 = tags_seen_in_train
+
+            current_station = self.model.test_df.loc[sequence[k-1], config.station_num]
+
+            # if the word appeared in the training data with tags we assign this tags to S
+            if current_station in tags_seen_in_station:
+                Sk = tags_seen_in_station[current_station]
+
+            if k != 1:
+                prev1_sation = self.model.test_df.loc[sequence[k - 2], config.station_num]
+                if prev1_sation in tags_seen_in_station:
+                    Sk_1 = tags_seen_in_station[prev1_sation]
+            else:
+                Sk_2, Sk_1 = ["**"], ["*"]
 
 
+            if k > 2:
+                prev2_sation = self.model.test_df.loc[sequence[k - 3], config.station_num]
+                if prev2_sation in tags_seen_in_station:
+                    Sk_2 = tags_seen_in_station[prev2_sation]
+            elif k == 2:
+                Sk_2 = ["*"]
+            device_id = self.model.test_df.loc[sequence[k-1], config.x_device_id]
+            probability_table = self.probability(Sk_2, Sk_1, Sk, device_id, sequence[k-1])
 
-def probability(self, Sk_2, Sk_1, Sk, sentence, k):
-    """
-    :param Sk_2:
-    :param Sk_1:
-    :param Sk:
-    :param sentence:
-    :param k: the current position
-    :return:
-    """
+            for u in Sk_1:
+                for v in Sk:
 
-    probability_table = defaultdict(tuple)
-    weights = self.v
+                    pie_max = 0
+                    bp_max = None
+                    for t in Sk_2:
+                        pie_temp = pie[(k - 1, t, u)] * probability_table[(t, u, v)]
 
-    for t in Sk_2:
+                        if pie_temp > pie_max:
+                            pie_max = pie_temp
+                            bp_max = t
+
+                    pie[(k, u, v)] = pie_max
+                    bp[(k, u, v)] = bp_max
+
+        t = {}
+        n = len(sequence)
+        pie_max = 0
         for u in Sk_1:
             for v in Sk:
-                probability_table[(t, u, v)] = np.exp(
-                    sum(weights[self.find_feature_vector_test_set(sentence, k, t, u, v)]))
+                curr_pie = pie[(n, u, v)]
+                if curr_pie > pie_max:
+                    pie_max = curr_pie
+                    t[n] = v
+                    t[n - 1] = u
 
-            # Constant Denominator
-            denominator = np.sum(probability_table[(t, u, v)] for v in Sk)
-            for v in Sk:
-                probability_table[(t, u, v)] /= denominator
+        for k in range(n - 2, 0, -1):
+            t[k] = bp[k + 2, t[k + 1], t[k + 2]]
 
-    return probability_table
+        genre_sequence = []
+        for i in range(1, len(t)+1):
+            genre_sequence.append(t[i])
 
-def viterbi_algorithm(self, sequence, label_in_train, ):
-    """
-    :type sentence: list of words
-    """
-    pie = {}
-    bp = {}
+        if n == 1:
+            genre_sequence = [genre_sequence[n]]
 
-    # logger.info("viterbi_algorithm --------------> ")
-    # Base Case
-    pie[(0, "*", "*")] = 1.0
-
-    for k in range(1, len(sequence) + 1):
-
-        Sk = tags_seen_in_train
-        Sk_1 = tags_seen_in_train
-        Sk_2 = tags_seen_in_train
-
-        # if the word appeared in the training data with tags we assign this tags to S
-        word = sentence[k - 1].lower()
-        if word in self.seen_words_with_tags:
-            Sk = self.seen_words_with_tags[word]
-
-        if k == 1:
-            Sk_2, Sk_1 = ["*"], ["*"]
-        elif sentence[k - 2].lower() in self.seen_words_with_tags:
-            Sk_1 = self.seen_words_with_tags[sentence[k - 2].lower()]
-
-        if k == 2:
-            Sk_2 = ["*"]
-        elif k > 2 and sentence[k - 3].lower() in self.seen_words_with_tags:
-            Sk_2 = self.seen_words_with_tags[sentence[k - 3].lower()]
-
-        probability_table = self.probability(Sk_2, Sk_1, Sk, sentence, k)
-
-        for u in Sk_1:
-            for v in Sk:
-
-                pie_max = 0
-                bp_max = None
-                for t in Sk_2:
-                    pie_temp = pie[(k - 1, t, u)] * probability_table[(t, u, v)]
-
-                    if pie_temp > pie_max:
-                        pie_max = pie_temp
-                        bp_max = t
-
-                pie[(k, u, v)] = pie_max
-                bp[(k, u, v)] = bp_max
-
-    t = {}
-    n = len(sentence)
-    pie_max = 0
-    for u in Sk_1:
-        for v in Sk:
-            curr_pie = pie[(n, u, v)]
-            if curr_pie > pie_max:
-                pie_max = curr_pie
-                t[n] = v
-                t[n - 1] = u
-
-    for k in range(n - 2, 0, -1):
-        t[k] = bp[k + 2, t[k + 1], t[k + 2]]
-
-    tag_sequence = []
-    for i in t:
-        tag_sequence.append(t[i])
-
-    if n == 1:
-        tag_sequence = [tag_sequence[n]]
-
-    logger.info("viterbi_algorithm <-------------- ")
-    return tag_sequence
+        logger.info("viterbi_algorithm <-------------- ")
+        return genre_sequence

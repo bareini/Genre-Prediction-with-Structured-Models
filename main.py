@@ -6,6 +6,7 @@ import pickle
 
 from sklearn.model_selection import KFold
 
+
 import config
 from model import Model
 import MLpreceptron
@@ -15,7 +16,7 @@ from memm_parameters_learn import ParametersMEMM
 # from Viterbi_NLP import viterbi
 import pandas as pd
 from collections import Counter
-
+from viterbi import Viterbi
 
 # # open log connection
 # directory = 'C:\\Users\\RomG\\PycharmProjects\\NLP_HW1\\'
@@ -170,11 +171,22 @@ if __name__ == "__main__":
     # todo: fix in the code!!!!!!@!#!@#@$#
     device_house_dict = device_house_dict[config.household_id]
 
+    threshold = round(len(df_demo.groupby(['Device ID'])) * config.train_threshold)
+    g = df_demo.groupby(['Device ID']).groups
+    dev_threshold = list(g)[threshold]
+    idx = g[dev_threshold][-1]
+    dfx_train = df_demo.loc[:idx, ]
+    dfx_test = df_demo.loc[idx + 1:, ]
+
     house_device_dict = dict(list(house_device_dict.items())[41209:41210])
+    df_x_temp = df_x.loc[df_x[config.x_device_id] == '0000000050f3']
+
     model = Model(df_demo=df_demo.loc[df_demo[config.household_id] == 1471346],
-                  df_x=df_x.loc[df_x[config.x_device_id] == '0000000050f3'],
+                  df_x=df_x_temp,
                   house_device=house_device_dict,
-                  device_house=device_house_dict)
+                  device_house=device_house_dict,
+                  test_df=df_x_temp,
+                  test_demo_df=df_demo.loc[df_demo[config.household_id] == 1471346])
     # Baselines - baseline predictions
     # most_common = MLpreceptron.return_common_stupid(df_x['Program Genre'])
     most_common_value = Counter(model.true_genres).most_common()[0][0]
@@ -185,6 +197,7 @@ if __name__ == "__main__":
                                                              list(set(model.true_genres)), model.atomic_tags, 10)
 
     preceptron_pred = preceptron_clf.predict_genere(model.train_feature_matrix)
+    print(preceptron_pred)
 
     memm = ParametersMEMM(model, 0.1)
 
@@ -192,49 +205,17 @@ if __name__ == "__main__":
     results_filename = os.path.join(directory, config.results_file_name)
 
     memm.gradient_decent(weights_filename, results_filename)
+    viterbi = Viterbi(model, memm.w)
+    memm_pred = []
+    # todo; make avilalble when the sequences dict is merged
+    # for seq in model.devices:
+    #     pred = viterbi.viterbi_algorithm(seq)
+    #     memm_pred.extend(pred)
+    seq = list(df_x_temp.df_id)
+    pred = viterbi.viterbi_algorithm(seq)
+    print(pred)
+    accuracy_most_common, recall_most_common, precision_most_common = Evaluate.calc_acc_recall_precision(pred_labels=most_common, true_labels=list(set(model.true_genres)))
+    print(accuracy_most_common, recall_most_common, precision_most_common)
+
     # memm_pred = memm.gradient_decent(weights_filename, results_filename)
 
-
-    # baseline1_perd - simply most common
-
-
-    # train_file = directory + 'data/train_small.wtag'
-    # test_file = directory + 'data/test_small.wtag'
-    # comp_file = directory + 'data/comp_small.words'
-    # cv = False
-    # comp = False
-    # if cv:
-    #     cross_validation(train_file)
-    # else:
-    #     feature_type_dict = {
-    #     #                   'all_features': [['feature_100', 'feature_101', 'feature_102', 'feature_103', 'feature_104',
-    #     #                                       'feature_105', 'feature_106', 'feature_107', 'feature_108', 'feature_109',
-    #     #                                       'feature_110','feature_111']],
-    #     #                                       #  ['feature_100', 'feature_101', 'feature_102', 'feature_103', 'feature_104',
-    #     #                                       # 'feature_105', 'feature_106', 'feature_107'],
-    #     #                                       #  ['feature_100', 'feature_101','feature_102', 'feature_103','feature_104',
-    #     #                                       #   'feature_105', 'feature_106', 'feature_107','feature_108', 'feature_109'],
-    #     #                                       #  ['feature_100', 'feature_101', 'feature_102', 'feature_103', 'feature_104',
-    #     #                                       # 'feature_105', 'feature_106', 'feature_107','feature_110','feature_111']]}
-    #                          'basic_model': [['feature_100', 'feature_103', 'feature_104']]}
-    #     feature_type_dict = {
-    #         'all_features': [['feature_100', 'feature_101', 'feature_102', 'feature_103', 'feature_104',
-    #                           'feature_105', 'feature_106', 'feature_107', 'feature_108', 'feature_109',
-    #                           'feature_110', 'feature_111','feature_112','feature_113','feature_114']]}
-    #         #'basic_model': [['feature_100', 'feature_103', 'feature_104']]}
-    #
-    # start_time = time.time()
-    # main()
-    # # lambda_list = [10.0]
-    # # for lambda_ in lambda_list:
-    # #     if not comp:
-    # #         for feature_type_name, feature_type_list in feature_type_dict.items():
-    # #             main(train_file, test_file, 'test', feature_type_list, lambda_, comp)
-    # #     else:
-    # #         for feature_type_name, feature_type_list in feature_type_dict.items():
-    # #             main(comp_file, test_file, 'test', feature_type_list, lambda_, comp)
-    # run_time = (time.time() - start_time) / 60.0
-    # print("{}: Finish running with lamda: {}. Run time is: {} minutes".
-    #       format(time.asctime(time.localtime(time.time())), lambda_, run_time))
-    # logging.info('{}: Finish running with lambda:{} . Run time is: {} minutes'.
-    #              format(time.asctime(time.localtime(time.time())), lambda_, run_time))
