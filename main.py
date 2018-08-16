@@ -193,22 +193,27 @@ if __name__ == "__main__":
 
     # Baselines - baseline predictions
     # most_common = MLpreceptron.return_common_stupid(df_x['Program Genre'])
+    logging.info('{}: befor_most_common'.format(time.asctime(time.localtime(time.time()))))
     most_common_value = Counter(model.true_genres).most_common()[0][0]
     most_common = [most_common_value] * len(model.true_genres)
     print(most_common)
 
+    logging.info('{}: befor_preceptron'.format(time.asctime(time.localtime(time.time()))))
     preceptron_clf =  MLpreceptron.MulticlasslabelPerceptron(model.train_feature_matrix, model.true_genres,
                                                              list(set(model.true_genres)), model.atomic_tags, 10)
 
     preceptron_pred = preceptron_clf.predict_genere(model.train_feature_matrix)
     print(preceptron_pred)
 
+    logging.info('{}: befor_memm'.format(time.asctime(time.localtime(time.time()))))
     memm = ParametersMEMM(model, 0.1)
 
     weights_filename = os.path.join(directory, config.weights_file_name)
     results_filename = os.path.join(directory, config.results_file_name)
 
     memm.gradient_decent(weights_filename, results_filename)
+
+    logging.info('{}: befor_viterbi'.format(time.asctime(time.localtime(time.time()))))
     viterbi = Viterbi(model, memm.w)
     memm_pred = []
     # todo; make avilalble when the sequences dict is merged
@@ -219,6 +224,7 @@ if __name__ == "__main__":
     pred = viterbi.viterbi_algorithm(seq)
     print(pred)
 
+    logging.info('{}: befor_evaluate'.format(time.asctime(time.localtime(time.time()))))
     evaluate = Evaluate(model)
     accuracy, recall, precision = evaluate.calc_acc_recall_precision(pred_labels=most_common)
     evaluate.evaluate_per_dev()
