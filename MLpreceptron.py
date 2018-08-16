@@ -54,8 +54,8 @@ def error_factor(x,y):
     pred = MulticlasslabelPerceptron.labels_mapping[x]
     true = MulticlasslabelPerceptron.labels_mapping[y]
 
-    pred_label_list = pred.split('_')
-    true_label_list = true.split('_')
+    pred_label_list = pred.split(',')
+    true_label_list = true.split(',')
 
     denominator = pred_label_list + list(set(true_label_list) - set(pred_label_list))
 

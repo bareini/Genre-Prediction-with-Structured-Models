@@ -15,7 +15,7 @@ class Model:
     the model builder
     """
 
-    def __init__(self, df_demo, df_x, house_device, device_house, test_df = None, test_demo_df = None):
+    def __init__(self, df_demo, df_x, house_device, device_house, test_df = None):
         """
 
 
@@ -31,7 +31,6 @@ class Model:
         self.df_x = df_x
         self.df_demo = df_demo
         self.test_df = test_df
-        self.test_demo_df = test_demo_df
 
         self.house_device = house_device
         self.device_house = device_house
@@ -58,6 +57,7 @@ class Model:
         self.build_features_matrices()
         self.dict_notes_per_device = None
         self.notes_per_device()
+        self.devices_gen = self.dict_notes_per_device.keys()
 
     def init_features(self):
         """
