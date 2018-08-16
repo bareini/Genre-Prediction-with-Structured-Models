@@ -96,6 +96,7 @@ if __name__ == "__main__":
     logging.info('{}: before_evaluate'.format(time.asctime(time.localtime(time.time()))))
     evaluate = Evaluate(model)
     accuracy, recall, precision = evaluate.calc_acc_recall_precision(pred_labels=most_common)
+    bin_accuracy = evaluate.bin_acc_recall_precision(pred_labels=most_common)
     evaluate.evaluate_per_dev()
-    print(accuracy, recall, precision)
+    print(accuracy, recall, precision, bin_accuracy)
 
