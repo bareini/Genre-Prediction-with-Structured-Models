@@ -171,12 +171,12 @@ if __name__ == "__main__":
     # todo: fix in the code!!!!!!@!#!@#@$#
     device_house_dict = device_house_dict[config.household_id]
 
-    threshold = round(len(df_demo.groupby(['Device ID'])) * config.train_threshold)
-    g = df_demo.groupby(['Device ID']).groups
+    threshold = round(len(df_x.groupby(['Device ID'])) * config.train_threshold)
+    g = df_x.groupby(['Device ID']).groups
     dev_threshold = list(g)[threshold]
     idx = g[dev_threshold][-1]
-    dfx_train = df_demo.loc[:idx, ]
-    dfx_test = df_demo.loc[idx + 1:, ]
+    dfx_train = df_x.loc[:idx, ]
+    dfx_test = df_x.loc[idx + 1:, ]
 
     house_device_dict = dict(list(house_device_dict.items())[41209:41210])
     df_x_temp = df_x.loc[df_x[config.x_device_id] == '0000000050f3']
@@ -214,8 +214,11 @@ if __name__ == "__main__":
     seq = list(df_x_temp.df_id)
     pred = viterbi.viterbi_algorithm(seq)
     print(pred)
-    accuracy_most_common, recall_most_common, precision_most_common = Evaluate.calc_acc_recall_precision(pred_labels=most_common, true_labels=list(set(model.true_genres)))
-    print(accuracy_most_common, recall_most_common, precision_most_common)
+
+    evaluate = Evaluate(model)
+    accuracy, recall, precision = evaluate.calc_acc_recall_precision(pred_labels=most_common)
+    evaluate.evaluate_per_dev()
+    print(accuracy, recall, precision)
 
     # memm_pred = memm.gradient_decent(weights_filename, results_filename)
 
