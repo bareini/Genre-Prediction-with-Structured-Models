@@ -55,3 +55,13 @@ class Evaluate:
 
 
         return avg_accuracy, avg_recall, avg_precision
+
+    def bin_acc_recall_precision(self, pred_labels):
+        bin_acc = []
+        true_labels = self.model.true_genres
+        for i in range(len(true_labels)):
+            bin_acc.append(1 if true_labels[i] == pred_labels[i] else 0)
+
+        avg_bin_acc = np.mean(bin_acc)
+
+        return avg_bin_acc
