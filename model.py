@@ -116,7 +116,7 @@ class Model:
         self.df_cols_dict = {'x': {name_: id_ for id_, name_ in enumerate(self.df_x.columns)}}
         self.df_cols_dict.update({'demo': {name_: id_ for id_, name_ in enumerate(self.df_demo.columns)}})
 
-        x_matrix = self.df_x.as_matrix()    # type: np.matrix
+        x_matrix = self.df_x.values    # type: np.matrix
 
         relevant_demo_id = None
         demo_features = None
@@ -373,7 +373,7 @@ class Model:
         # replace every 1 in row for the number of device
         # for key, value in dev_per_house.items():
         #     self.df_demo.loc[[key]] = self.df_demo.loc[[key]].replace(1, value)
-        temp_matrix = np.multiply(self.df_demo.as_matrix(), arr_dev_per_house)
+        temp_matrix = np.multiply(self.df_demo.values, arr_dev_per_house)
         # create dictionary for feature and how many device with this feature
         # temp_matrix = self.df_demo.drop(columns=config.household_id).as_matrix()
         temp_matrix = temp_matrix.sum(axis=0)
