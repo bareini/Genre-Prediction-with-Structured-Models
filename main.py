@@ -181,6 +181,7 @@ if __name__ == "__main__":
     house_device_dict = dict(list(house_device_dict.items())[41209:41210])
     df_x_temp = df_x.loc[df_x[config.x_device_id] == '0000000050f3']
 
+    logging.info('{}: befor_create_model'.format(time.asctime(time.localtime(time.time()))))
     model = Model(df_demo=df_demo.loc[df_demo[config.household_id] == 1471346],
                   df_x=df_x_temp,
                   house_device=house_device_dict,
