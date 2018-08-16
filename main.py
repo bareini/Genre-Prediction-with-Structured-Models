@@ -178,16 +178,19 @@ if __name__ == "__main__":
     dfx_train = df_x.loc[:idx, ]
     dfx_test = df_x.loc[idx + 1:, ]
 
-    house_device_dict = dict(list(house_device_dict.items())[41209:41210])
-    df_x_temp = df_x.loc[df_x[config.x_device_id] == '0000000050f3']
+    house_device_dict = dict(list(house_device_dict.items()))
+    df_x_temp = df_x
 
     logging.info('{}: befor_create_model'.format(time.asctime(time.localtime(time.time()))))
-    model = Model(df_demo=df_demo.loc[df_demo[config.household_id] == 1471346],
+    model = Model(df_demo=df_demo,
                   df_x=df_x_temp,
                   house_device=house_device_dict,
                   device_house=device_house_dict,
                   test_df=df_x_temp,
-                  test_demo_df=df_demo.loc[df_demo[config.household_id] == 1471346])
+                  test_demo_df=df_demo)
+    pickle.dump(model, open(os.path.join(directory, config.dict_folder, 'model.pkl'),'wb'))
+    # model = pickle.load(open(os.path.join(base_directory, config.models_folder, 'model.pkl'),'rb'))
+
     # Baselines - baseline predictions
     # most_common = MLpreceptron.return_common_stupid(df_x['Program Genre'])
     most_common_value = Counter(model.true_genres).most_common()[0][0]
@@ -220,6 +223,4 @@ if __name__ == "__main__":
     accuracy, recall, precision = evaluate.calc_acc_recall_precision(pred_labels=most_common)
     evaluate.evaluate_per_dev()
     print(accuracy, recall, precision)
-
-    # memm_pred = memm.gradient_decent(weights_filename, results_filename)
 

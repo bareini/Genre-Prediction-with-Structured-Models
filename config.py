@@ -8,6 +8,8 @@ output_dir = 'output'
 data_dir = 'data'
 weights_folder = 'weights'
 results_folder = 'evaluations'
+dict_folder = 'dict'
+models_folder = 'models'
 
 # data files
 daily_prog_data = os.path.join("data", "DailyProgramData_04012015.csv")
