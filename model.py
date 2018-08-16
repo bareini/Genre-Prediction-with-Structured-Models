@@ -56,6 +56,8 @@ class Model:
         self.init_features()
         # functions as build_features_head_modifier
         self.build_features_matrices()
+        self.dict_notes_per_device = None
+        self.notes_per_device()
 
     def init_features(self):
         """
@@ -386,8 +388,8 @@ class Model:
 
         :return: dict the notes for every device.
         """
-        dict_notes_per_device = self.df_x.groupby(['Device ID'])['df_id'].apply(list).to_dict()
-        return dict_notes_per_device
+        self.dict_notes_per_device = self.test_df.groupby(['Device ID'])['df_id'].apply(list).to_dict()
+
 
 
 if __name__ == '__main__':

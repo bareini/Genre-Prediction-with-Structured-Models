@@ -214,8 +214,11 @@ if __name__ == "__main__":
     seq = list(df_x_temp.df_id)
     pred = viterbi.viterbi_algorithm(seq)
     print(pred)
-    accuracy_most_common, recall_most_common, precision_most_common = Evaluate.calc_acc_recall_precision(pred_labels=most_common, true_labels=list(set(model.true_genres)))
-    print(accuracy_most_common, recall_most_common, precision_most_common)
+
+    evaluate = Evaluate(model)
+    accuracy, recall, precision = evaluate.calc_acc_recall_precision(pred_labels=most_common)
+    evaluate.evaluate_per_dev()
+    print(accuracy, recall, precision)
 
     # memm_pred = memm.gradient_decent(weights_filename, results_filename)
 
