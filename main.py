@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
     threshold = round(len(df_x.groupby(['Device ID'])) * config.train_threshold)
     g = df_x.groupby(['Device ID']).groups
-    # df_demo = df_demo.drop([config.voter], axis=1)
+    df_demo = df_demo.drop([config.voter], axis=1)
     dev_threshold = list(g)[threshold]
     idx = g[dev_threshold][-1]
     dfx_train = df_x.loc[:idx, ]
@@ -52,17 +52,14 @@ if __name__ == "__main__":
     house_device_dict = dict(list(house_device_dict.items()))
     df_x_temp = df_x
 
-
     logging.info('{}: before create perceptron model'.format(time.asctime(time.localtime(time.time()))))
     model = Model(df_demo=df_demo,
-                  df_x=dfx_train[dfx_train[config.x_device_id] == '0000000050f3'],
+                  df_x=dfx_train,
                   house_device=house_device_dict,
                   device_house=device_house_dict,
                   model_type='perceptron',
                   test_df=dfx_test)
-    pickle.dump(model, open(os.path.join(directory, config.dict_folder, 'perceptron_model.pkl'), 'wb'))
-
-
+    pickle.dump(model, open(os.path.join(directory, config.dict_folder, 'model.pkl'), 'wb'))
     # model = pickle.load(open(os.path.join(base_directory, config.models_folder, 'model.pkl'),'rb'))
 
     # Baselines - baseline predictions
@@ -121,10 +118,12 @@ if __name__ == "__main__":
     viterbi = Viterbi(model, memm.w)
     memm_pred = []
     # todo; make avilalble when the sequences dict is merged
-    for seq in model.devices_gen:
+    for seq in model.dict_notes_per_device.values():
+        if len (seq) < 3:
+            continue
         pred = viterbi.viterbi_algorithm(seq)
         memm_pred.extend(pred)
-    # seq = list(df_x_temp.df_id)
+    # seq = model.dict_notes_per_device['00000047d22b']
     # pred = viterbi.viterbi_algorithm(seq)
 
     logging.info('{}: before evaluate'.format(time.asctime(time.localtime(time.time()))))
