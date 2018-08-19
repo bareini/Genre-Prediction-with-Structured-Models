@@ -15,7 +15,7 @@ class Model:
     the model builder
     """
 
-    def __init__(self, df_demo, df_x, house_device, device_house, test_df = None):
+    def __init__(self, df_demo, df_x, house_device, device_house, model_type, test_df = None):
         """
 
 
@@ -31,6 +31,7 @@ class Model:
         self.df_x = df_x
         self.df_demo = df_demo
         self.test_df = test_df
+        self.model_type = model_type
 
         self.house_device = house_device
         self.device_house = device_house
@@ -243,25 +244,26 @@ class Model:
             if name in self.features_position:
                 feature_vector_positions.append(self.features_position[name])
 
-        for col in config.genere_cols:
-            action, prefix = config.col_action[col]
+        if self.model_type != 'perceptron':
+            for col in config.genere_cols:
+                action, prefix = config.col_action[col]
 
 
-            # can be only 'Program Genre'
-            if action == 'unique' or action == 'counter':
-                name = "{}_{}".format(prefix, target_genere)
+                # can be only 'Program Genre'
+                if action == 'unique' or action == 'counter':
+                    name = "{}_{}".format(prefix, target_genere)
 
 
-            elif action == 'interact':
-                col_1, col_2 = col
-                name = "{}_{}_{}".format(prefix, node[col_1], target_genere)
+                elif action == 'interact':
+                    col_1, col_2 = col
+                    name = "{}_{}_{}".format(prefix, node[col_1], target_genere)
 
-            elif action == 'double_interact':
-                col_1, col_2, col_3 = col
-                name = "{}_{}_{}_{}".format(prefix, node[col_1], node[col_2], target_genere)
+                elif action == 'double_interact':
+                    col_1, col_2, col_3 = col
+                    name = "{}_{}_{}_{}".format(prefix, node[col_1], node[col_2], target_genere)
 
-            if name in self.features_position:
-                feature_vector_positions.append(self.features_position[name])
+                if name in self.features_position:
+                    feature_vector_positions.append(self.features_position[name])
 
         return feature_vector_positions, len(feature_vector_positions)
 
