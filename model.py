@@ -52,14 +52,14 @@ class Model:
         self.true_genres = df_x['Program Genre'].tolist()
 
         self.feature_position_counter = count()
-
+        self.prec_positions = []  # cols which are valid also for preceptron
         self.init_features()
         # functions as build_features_head_modifier
         self.build_features_matrices()
         self.dict_notes_per_device = None
         self.notes_per_device()
         self.devices_gen = list(self.dict_notes_per_device.keys())
-        self.prec_positions = [] #cols which are valid also for preceptron
+
 
     def init_features(self):
         """

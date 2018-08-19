@@ -102,6 +102,8 @@ thresholds = {
     ('part_of_day', 'Program Genre'): 0,
     ('prev_1_genre', 'Program Genre'): 0,
     ('prev_2_genre', 'prev_1_genre', 'Program Genre'): 0,
+    ('duration_bins', 'Program Genre'): 0,
+    ('part_of_day', 'prev_1_genre', 'Program Genre'): 0,
     'Station Number': 0,
 }
 
