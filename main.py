@@ -52,30 +52,61 @@ if __name__ == "__main__":
     house_device_dict = dict(list(house_device_dict.items()))
     df_x_temp = df_x
 
-    logging.info('{}: before_create_model'.format(time.asctime(time.localtime(time.time()))))
-    # model = Model(df_demo=df_demo,
-    #               df_x=dfx_train,
-    #               house_device=house_device_dict,
-    #               device_house=device_house_dict,
-    #               test_df=dfx_test)
-    # pickle.dump(model, open(os.path.join(directory, config.dict_folder, 'model.pkl'), 'wb'))
-    model = pickle.load(open(os.path.join(base_directory, config.models_folder, 'model.pkl'),'rb'))
+    logging.info('{}: before create perceptron model'.format(time.asctime(time.localtime(time.time()))))
+    model = Model(df_demo=df_demo,
+                  df_x=dfx_train,
+                  house_device=house_device_dict,
+                  device_house=device_house_dict,
+                  model_type='perceptron',
+                  test_df=dfx_test)
+    pickle.dump(model, open(os.path.join(directory, config.dict_folder, 'model.pkl'), 'wb'))
+    # model = pickle.load(open(os.path.join(base_directory, config.models_folder, 'model.pkl'),'rb'))
 
     # Baselines - baseline predictions
     # most_common = MLpreceptron.return_common_stupid(df_x['Program Genre'])
+
+
+    logging.info('{}: before preceptron'.format(time.asctime(time.localtime(time.time()))))
+    preceptron_clf =  MLpreceptron.MulticlasslabelPerceptron(model.train_feature_matrix, model.true_genres,
+                                                             list(set(model.true_genres)), model.atomic_tags, 10)
+    preceptron_pred = preceptron_clf.predict_genere(model.train_feature_matrix)
+    print(preceptron_pred)
+
+    logging.info('{}: before preceptron evaluate'.format(time.asctime(time.localtime(time.time()))))
+    evaluate = Evaluate(model)
+    accuracy, recall, precision, f1 = evaluate.calc_acc_recall_precision(pred_labels=preceptron_pred)
+    bin_accuracy = evaluate.bin_acc_recall_precision(pred_labels=preceptron_pred)
+    evaluate.evaluate_per_dev()
+    logging.info('{}: evaluate preceptron: bin_accuracy: {}, accuracy:{}, recall: {}, precision: {}, f1: {}'.format(
+        time.asctime(time.localtime(time.time())),
+                 bin_accuracy, accuracy, recall, precision, f1))
+    pickle.dump(evaluate, open(os.path.join(directory, config.results_folder, 'perceptron_evaluate.pkl'), 'wb'))
+
+
     logging.info('{}: before_most_common'.format(time.asctime(time.localtime(time.time()))))
     most_common_value = Counter(model.true_genres).most_common()[0][0]
     most_common = [most_common_value] * len(model.true_genres)
     print(most_common)
 
-    logging.info('{}: before_preceptron'.format(time.asctime(time.localtime(time.time()))))
-    preceptron_clf =  MLpreceptron.MulticlasslabelPerceptron(model.train_feature_matrix, model.true_genres,
-                                                             list(set(model.true_genres)), model.atomic_tags, 10)
+    evaluate = Evaluate(model)
+    accuracy, recall, precision, f1 = evaluate.calc_acc_recall_precision(pred_labels=most_common)
+    bin_accuracy = evaluate.bin_acc_recall_precision(pred_labels=most_common)
+    evaluate.evaluate_per_dev()
+    logging.info('{}: evaluate most_common: bin_accuracy:{}, accuracy:{}, recall:{}, precision:{}, f1: {}'.format(
+        time.asctime(time.localtime(time.time())), bin_accuracy, accuracy, recall, precision, f1))
+    pickle.dump(evaluate, open(os.path.join(directory, config.results_folder, 'most_common.pkl'), 'wb'))
 
-    preceptron_pred = preceptron_clf.predict_genere(model.train_feature_matrix)
-    print(preceptron_pred)
 
-    logging.info('{}: before_memm'.format(time.asctime(time.localtime(time.time()))))
+    logging.info('{}: before create basic model'.format(time.asctime(time.localtime(time.time()))))
+    model = Model(df_demo=df_demo,
+                  df_x=dfx_train[dfx_train[config.x_device_id] == '0000000050f3'],
+                  house_device=house_device_dict,
+                  device_house=device_house_dict,
+                  model_type='basic',
+                  test_df=dfx_test)
+    pickle.dump(model, open(os.path.join(directory, config.dict_folder, 'basic_model.pkl'), 'wb'))
+
+    logging.info('{}: before memm'.format(time.asctime(time.localtime(time.time()))))
     memm = ParametersMEMM(model, 0.1)
 
     weights_filename = os.path.join(directory, config.weights_file_name)
@@ -83,7 +114,7 @@ if __name__ == "__main__":
 
     memm.gradient_decent(weights_filename, results_filename)
 
-    logging.info('{}: before_viterbi'.format(time.asctime(time.localtime(time.time()))))
+    logging.info('{}: before viterbi'.format(time.asctime(time.localtime(time.time()))))
     viterbi = Viterbi(model, memm.w)
     memm_pred = []
     # todo; make avilalble when the sequences dict is merged
@@ -95,10 +126,12 @@ if __name__ == "__main__":
     # seq = model.dict_notes_per_device['00000047d22b']
     # pred = viterbi.viterbi_algorithm(seq)
 
-    logging.info('{}: before_evaluate'.format(time.asctime(time.localtime(time.time()))))
+    logging.info('{}: before evaluate'.format(time.asctime(time.localtime(time.time()))))
     evaluate = Evaluate(model)
-    accuracy, recall, precision = evaluate.calc_acc_recall_precision(pred_labels=most_common)
-    bin_accuracy = evaluate.bin_acc_recall_precision(pred_labels=most_common)
+    accuracy, recall, precision, f1 = evaluate.calc_acc_recall_precision(pred_labels=memm_pred)
+    bin_accuracy = evaluate.bin_acc_recall_precision(pred_labels=memm_pred)
     evaluate.evaluate_per_dev()
     print(accuracy, recall, precision, bin_accuracy)
-
+    logging.info('{}: evaluate most_common: bin_accuracy: {}, accuracy:{}, recall: {}, precision: {}, f1: {}'.format(
+    time.asctime(time.localtime(time.time())), bin_accuracy, accuracy, recall, precision, f1))
+    pickle.dump(evaluate, open(os.path.join(directory, config.results_folder, 'memm_pred.pkl'), 'wb'))
