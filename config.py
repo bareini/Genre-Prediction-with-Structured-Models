@@ -58,11 +58,13 @@ col_action = {
     'view_bins': ['unique', 'p1'],
     'completion_bins': ['unique', 'p2'],
     'Station Number': ['counter', 'p3'],
+    ('duration_bins', 'Program Genre'): ['interact', 'p4'],  # NEW!
     ('part_of_day', 'event_weekday'): ['interact', 't3'],
     ('event_weekday', 'Program Genre'): ['interact', 'i0'],
     ('part_of_day', 'Program Genre'): ['interact', 'i1'],
     ('prev_1_genre', 'Program Genre'): ['interact', 'g1'],
     ('prev_2_genre', 'prev_1_genre', 'Program Genre'): ['double_interact', 'g2'],
+    ('part_of_day', 'prev_1_genre', 'Program Genre'): ['double_interact', 'g3'], # NEW!
     ('Station Number', 'Program Genre'): ['interact', 'c1']
 }
 # 'Program Genre' must appear last in the feature name string
@@ -73,7 +75,24 @@ genere_cols = {
     ('part_of_day', 'Program Genre'): ['interact', 'i1'],
     ('prev_1_genre', 'Program Genre'): ['interact', 'g1'],
     ('prev_2_genre', 'prev_1_genre', 'Program Genre'): ['double_interact', 'g2'],
-    ('Station Number', 'Program Genre'): ['interact', 'c1']
+    ('Station Number', 'Program Genre'): ['interact', 'c1'],
+    ('duration_bins', 'Program Genre'): ['interact', 'p4'],   # NEW!
+    ('part_of_day', 'prev_1_genre', 'Program Genre'): ['double_interact', 'g3']  # NEW!
+
+}
+
+# NEW!
+advanced_household32 = {
+    'gen_in_dev_hh_1': ['counter', 'h0'],
+    ('gen_in_dev_hh_1', 'Program Genre'): ['interact', 'h1'],
+    ('gen_in_dev_hh_1', 'part_of_day'): ['interact', 'h2'],
+    ('event_weekday', 'gen_in_dev_hh_1'): ['interact', 'h3'],
+    ('part_of_day', 'gen_in_dev_hh_1', 'Program Genre'): ['double_interact', 'h4']
+}
+
+# NEW!
+advanced_household33 = {
+
 }
 
 thresholds = {
