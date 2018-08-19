@@ -58,7 +58,7 @@ if __name__ == "__main__":
                   house_device=house_device_dict,
                   device_house=device_house_dict,
                   test_df=dfx_test)
-    pickle.dump(model, open(os.path.join(directory, config.dict_folder, 'model.pkl'),'wb'))
+    pickle.dump(model, open(os.path.join(directory, config.dict_folder, 'model.pkl'), 'wb'))
     # model = pickle.load(open(os.path.join(base_directory, config.models_folder, 'model.pkl'),'rb'))
 
     # Baselines - baseline predictions

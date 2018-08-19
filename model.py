@@ -57,7 +57,7 @@ class Model:
         self.build_features_matrices()
         self.dict_notes_per_device = None
         self.notes_per_device()
-        self.devices_gen = self.dict_notes_per_device.keys()
+        self.devices_gen = list(self.dict_notes_per_device.keys())
 
     def init_features(self):
         """
