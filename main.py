@@ -57,9 +57,9 @@ if __name__ == "__main__":
                   df_x=dfx_train,
                   house_device=house_device_dict,
                   device_house=device_house_dict,
-                  model_type='perceptron',
+                  model_type='basic',
                   test_df=dfx_test)
-    pickle.dump(model, open(os.path.join(directory, config.dict_folder, 'model.pkl'), 'wb'))
+    pickle.dump(model, open(os.path.join(directory, config.dict_folder, 'basic_model.pkl'), 'wb'))
     # model = pickle.load(open(os.path.join(base_directory, config.models_folder, 'model.pkl'),'rb'))
 
     # Baselines - baseline predictions
@@ -67,9 +67,10 @@ if __name__ == "__main__":
 
 
     logging.info('{}: before preceptron'.format(time.asctime(time.localtime(time.time()))))
-    preceptron_clf =  MLpreceptron.MulticlasslabelPerceptron(model.train_feature_matrix, model.true_genres,
+    preceptron_input = model.train_feature_matrix.tocsc()[:, model.prec_positions]
+    preceptron_clf =  MLpreceptron.MulticlasslabelPerceptron(preceptron_input, model.true_genres,
                                                              list(set(model.true_genres)), model.atomic_tags, 10)
-    preceptron_pred = preceptron_clf.predict_genere(model.train_feature_matrix)
+    preceptron_pred = preceptron_clf.predict_genere(preceptron_input) # todo: change to actual test set
     print(preceptron_pred)
 
     logging.info('{}: before preceptron evaluate'.format(time.asctime(time.localtime(time.time()))))
@@ -97,15 +98,6 @@ if __name__ == "__main__":
     pickle.dump(evaluate, open(os.path.join(directory, config.results_folder, 'most_common.pkl'), 'wb'))
 
 
-    logging.info('{}: before create basic model'.format(time.asctime(time.localtime(time.time()))))
-    model = Model(df_demo=df_demo,
-                  df_x=dfx_train[dfx_train[config.x_device_id] == '0000000050f3'],
-                  house_device=house_device_dict,
-                  device_house=device_house_dict,
-                  model_type='basic',
-                  test_df=dfx_test)
-    pickle.dump(model, open(os.path.join(directory, config.dict_folder, 'basic_model.pkl'), 'wb'))
-
     logging.info('{}: before memm'.format(time.asctime(time.localtime(time.time()))))
     memm = ParametersMEMM(model, 0.1)
 
@@ -123,6 +115,7 @@ if __name__ == "__main__":
             continue
         pred = viterbi.viterbi_algorithm(seq)
         memm_pred.extend(pred)
+
     # seq = model.dict_notes_per_device['00000047d22b']
     # pred = viterbi.viterbi_algorithm(seq)
 
