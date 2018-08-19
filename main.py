@@ -110,7 +110,7 @@ if __name__ == "__main__":
     viterbi = Viterbi(model, memm.w)
     memm_pred = []
     # todo; make avilalble when the sequences dict is merged
-    for seq in model.dict_notes_per_device.values():
+    for seq in model.dict_nodes_per_device.values():
         if len (seq) < 3:
             continue
         pred = viterbi.viterbi_algorithm(seq)
