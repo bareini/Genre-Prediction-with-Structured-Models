@@ -52,14 +52,14 @@ if __name__ == "__main__":
     house_device_dict = dict(list(house_device_dict.items()))
     df_x_temp = df_x
 
-    logging.info('{}: befor_create_model'.format(time.asctime(time.localtime(time.time()))))
-    model = Model(df_demo=df_demo,
-                  df_x=dfx_train,
-                  house_device=house_device_dict,
-                  device_house=device_house_dict,
-                  test_df=dfx_test)
-    pickle.dump(model, open(os.path.join(directory, config.dict_folder, 'model.pkl'), 'wb'))
-    # model = pickle.load(open(os.path.join(base_directory, config.models_folder, 'model.pkl'),'rb'))
+    logging.info('{}: before_create_model'.format(time.asctime(time.localtime(time.time()))))
+    # model = Model(df_demo=df_demo,
+    #               df_x=dfx_train,
+    #               house_device=house_device_dict,
+    #               device_house=device_house_dict,
+    #               test_df=dfx_test)
+    # pickle.dump(model, open(os.path.join(directory, config.dict_folder, 'model.pkl'), 'wb'))
+    model = pickle.load(open(os.path.join(base_directory, config.models_folder, 'model.pkl'),'rb'))
 
     # Baselines - baseline predictions
     # most_common = MLpreceptron.return_common_stupid(df_x['Program Genre'])
@@ -87,10 +87,12 @@ if __name__ == "__main__":
     viterbi = Viterbi(model, memm.w)
     memm_pred = []
     # todo; make avilalble when the sequences dict is merged
-    for seq in model.devices_gen:
+    for seq in model.dict_notes_per_device.values():
+        if len (seq) < 3:
+            continue
         pred = viterbi.viterbi_algorithm(seq)
         memm_pred.extend(pred)
-    # seq = list(df_x_temp.df_id)
+    # seq = model.dict_notes_per_device['00000047d22b']
     # pred = viterbi.viterbi_algorithm(seq)
 
     logging.info('{}: before_evaluate'.format(time.asctime(time.localtime(time.time()))))

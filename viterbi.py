@@ -125,8 +125,10 @@ class Viterbi:
 
         genre_sequence = []
         for i in range(1, len(t)+1):
-            genre_sequence.append(t[i])
-
+            try:
+                genre_sequence.append(t[i])
+            except KeyError as e:
+                print("i: {}, seq={}, genre_sequence={}, t[i]={}, n={}".format(i, sequence, genre_sequence, t, n))
         if n == 1:
             genre_sequence = [genre_sequence[n]]
 
