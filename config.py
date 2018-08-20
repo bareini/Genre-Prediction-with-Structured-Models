@@ -124,3 +124,4 @@ station_genre = 'c1'
 voter = 'Voter/Party'
 station_num = 'Station Number'
 train_threshold = 0.8
+genre_prefixes = ['g0', 'g1', 'g2','g3', 'i0','c1','p4']
