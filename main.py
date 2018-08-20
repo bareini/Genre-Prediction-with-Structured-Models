@@ -1,23 +1,20 @@
-import os
 import logging
-import time
-from datetime import datetime
+import os
 import pickle
+import time
+from collections import Counter
+from datetime import datetime
 
-from sklearn.model_selection import KFold
+# from Viterbi_NLP import viterbi
+import pandas as pd
 
-
-import config
-from model import Model
 import MLpreceptron
+import config
 # from viterbi_ML import viterbi
 from evaluate import Evaluate
 from memm_parameters_learn import ParametersMEMM
-# from Viterbi_NLP import viterbi
-import pandas as pd
-from collections import Counter
+from model import Model
 from viterbi import Viterbi
-
 
 if __name__ == "__main__":
     # open log connection
@@ -35,11 +32,12 @@ if __name__ == "__main__":
     logging.info('{}: Start running'.format(time.asctime(time.localtime(time.time()))))
     print('{}: Start running'.format(time.asctime(time.localtime(time.time()))))
     df_x = pd.read_pickle(os.path.join(data_dir, config.viewing_data_name))
-    df_demo = pd.read_csv(os.path.join(data_dir, config.demo_file_name), index_col=0)
+    # df_demo = pd.read_csv(os.path.join(data_dir, config.demo_file_name), index_col=0)
+    df_demo = pd.read_pickle(os.path.join(data_dir, config.demo_file_name))
     device_house_dict = pickle.load(open(os.path.join(data_dir, config.device_house_dict), 'rb'))
     house_device_dict = pickle.load(open(os.path.join(data_dir, config.house_device_dict), 'rb'))
-    # todo: fix in the code!!!!!!@!#!@#@$#
-    device_house_dict = device_house_dict[config.household_id]
+    # # todo: fix in the code!!!!!!@!#!@#@$#
+    # device_house_dict = device_house_dict[config.household_id]
 
     threshold = round(len(df_x.groupby(['Device ID'])) * config.train_threshold)
     g = df_x.groupby(['Device ID']).groups
@@ -65,13 +63,14 @@ if __name__ == "__main__":
     # Baselines - baseline predictions
     # most_common = MLpreceptron.return_common_stupid(df_x['Program Genre'])
 
-
     logging.info('{}: before preceptron'.format(time.asctime(time.localtime(time.time()))))
     preceptron_input = model.train_feature_matrix.tocsc()[:, model.prec_positions]
-    preceptron_clf =  MLpreceptron.MulticlasslabelPerceptron(preceptron_input, model.true_genres,
-                                                             list(set(model.true_genres)), model.atomic_tags, 10)
-    preceptron_pred = preceptron_clf.predict_genere(preceptron_input) # todo: change to actual test set
+    preceptron_clf = MLpreceptron.MulticlasslabelPerceptron(preceptron_input, model.true_genres,
+                                                            list(set(model.true_genres)), model.atomic_tags, 10)
+    model.create_test_matrix()
+    preceptron_pred = preceptron_clf.predict_genere(preceptron_input)  # todo: change to actual test set
     print(preceptron_pred)
+
 
     logging.info('{}: before preceptron evaluate'.format(time.asctime(time.localtime(time.time()))))
     evaluate = Evaluate(model)
@@ -80,9 +79,8 @@ if __name__ == "__main__":
     evaluate.evaluate_per_dev()
     logging.info('{}: evaluate preceptron: bin_accuracy: {}, accuracy:{}, recall: {}, precision: {}, f1: {}'.format(
         time.asctime(time.localtime(time.time())),
-                 bin_accuracy, accuracy, recall, precision, f1))
+        bin_accuracy, accuracy, recall, precision, f1))
     pickle.dump(evaluate, open(os.path.join(directory, config.results_folder, 'perceptron_evaluate.pkl'), 'wb'))
-
 
     logging.info('{}: before_most_common'.format(time.asctime(time.localtime(time.time()))))
     most_common_value = Counter(model.true_genres).most_common()[0][0]
@@ -97,7 +95,6 @@ if __name__ == "__main__":
         time.asctime(time.localtime(time.time())), bin_accuracy, accuracy, recall, precision, f1))
     pickle.dump(evaluate, open(os.path.join(directory, config.results_folder, 'most_common.pkl'), 'wb'))
 
-
     logging.info('{}: before memm'.format(time.asctime(time.localtime(time.time()))))
     memm = ParametersMEMM(model, 0.1)
 
@@ -109,9 +106,8 @@ if __name__ == "__main__":
     logging.info('{}: before viterbi'.format(time.asctime(time.localtime(time.time()))))
     viterbi = Viterbi(model, memm.w)
     memm_pred = []
-    # todo; make avilalble when the sequences dict is merged
     for seq in model.dict_nodes_per_device.values():
-        if len (seq) < 3:
+        if len(seq) < 3:
             continue
         pred = viterbi.viterbi_algorithm(seq)
         memm_pred.extend(pred)
@@ -126,5 +122,5 @@ if __name__ == "__main__":
     evaluate.evaluate_per_dev()
     print(accuracy, recall, precision, bin_accuracy)
     logging.info('{}: evaluate most_common: bin_accuracy: {}, accuracy:{}, recall: {}, precision: {}, f1: {}'.format(
-    time.asctime(time.localtime(time.time())), bin_accuracy, accuracy, recall, precision, f1))
+        time.asctime(time.localtime(time.time())), bin_accuracy, accuracy, recall, precision, f1))
     pickle.dump(evaluate, open(os.path.join(directory, config.results_folder, 'memm_pred.pkl'), 'wb'))

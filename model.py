@@ -15,7 +15,7 @@ class Model:
     the model builder
     """
 
-    def __init__(self, df_demo, df_x, house_device, device_house, model_type, test_df = None):
+    def __init__(self, df_demo, df_x, house_device, device_house, model_type, test_df=None):
         """
 
 
@@ -58,8 +58,7 @@ class Model:
         self.build_features_matrices()
         self.dict_nodes_per_device = None
         self.notes_per_device()
-        # self.devices_gen = list(self.dict_nodes_per_device.keys())
-
+        self.test_feature_matrix = None
 
     def init_features(self):
         """
@@ -69,8 +68,6 @@ class Model:
 
         :return None:
         """
-
-
         for col, (action, prefix) in config.col_action.items():
             if action == 'counter':
                 # todo: take it out to function
@@ -116,10 +113,8 @@ class Model:
     def build_features_matrices(self):
         """
         Construct train_feature_matrix - a training matrix of actual genere sequences as they appear in the data
-        and mini matrices for per node of all possible genere - possible_genres_per_node_matrix
+        and mini matrices for per node of all possible genre - possible_genres_per_node_matrix
 
-        :param df_demo:
-        :param df_x:
         :return:
         """
         # todo: make sure that df_x is sorted by device -> time
@@ -128,7 +123,7 @@ class Model:
         self.df_cols_dict = {'x': {name_: id_ for id_, name_ in enumerate(self.df_x.columns)}}
         self.df_cols_dict.update({'demo': {name_: id_ for id_, name_ in enumerate(self.df_demo.columns)}})
 
-        x_matrix = self.df_x.values    # type: np.matrix
+        x_matrix = self.df_x.values  # type: np.matrix
 
         relevant_demo_id = None
         demo_features = None
@@ -155,8 +150,6 @@ class Model:
                 if device_id is not None:
                     relevant_demo_id = self.device_house[device_id]
                     demo_features, demo_feature_count = self.demo_positions(relevant_demo_id)
-
-
 
             # indexes for possible labels matrix
             word_matrix_rows_index_counter = 0
@@ -218,7 +211,7 @@ class Model:
 
         logger.debug("DependencyParsing: build_features_head_modifier <--------------")
 
-    def node_positions(self, device_id, target_genere ):
+    def node_positions(self, device_id, target_genere):
         """
         extract all potential features for a specific node before selection
 
@@ -259,11 +252,9 @@ class Model:
             for col in config.genere_cols:
                 action, prefix = config.col_action[col]
 
-
                 # can be only 'Program Genre'
                 if action == 'unique' or action == 'counter':
                     name = "{}_{}".format(prefix, target_genere)
-
 
                 elif action == 'interact':
                     col_1, col_2 = col
@@ -278,7 +269,59 @@ class Model:
 
         return feature_vector_positions, len(feature_vector_positions)
 
-    def test_node_positions(self, device_id, target_genere, prev1_genre, prev2_genre ):
+    def create_test_matrix(self):
+        """
+        temporary method, to create the test feature matrix, for the use of the perceptron
+        will be replaced by build_features_matrices
+
+        :return: None
+        """
+        # todo: embed in the build_features_matrices
+        x_matrix = self.test_df.values  # type: np.matrix
+
+        # todo: make sure this is changed back to MEMM!!
+        self.model_type = 'perceptron'
+
+        relevant_demo_id = None
+        demo_features = None
+        device_id = None
+
+        # indexes for the training ('truth') matrix
+        test_matrix_rows_index_counter = 0
+        test_matrix_rows_index = []
+        test_matrix_columns_index = []
+
+        for idx in range(x_matrix.shape[0]):
+
+            node = x_matrix[idx]
+            node_index = node[self.df_cols_dict['x'][config.x_row_index]]
+
+            if device_id != node[self.df_cols_dict['x'][config.x_device_id]]:
+                device_id = node[self.df_cols_dict['x'][config.x_device_id]]
+
+                if device_id is not None:
+                    relevant_demo_id = self.device_house[device_id]
+                    demo_features, demo_feature_count = self.demo_positions(relevant_demo_id)
+
+            columns_index = []
+
+            current_features, _ = self.node_positions(node_index, None)
+            current_features.extend(demo_features)
+
+            columns_index.extend(current_features)
+
+            temp = list(np.ones(len(columns_index), dtype=np.int32) * test_matrix_rows_index_counter)
+            test_matrix_rows_index.extend(temp)
+            test_matrix_columns_index.extend(columns_index)
+            test_matrix_rows_index_counter += 1
+
+        rows_index = np.asarray(a=test_matrix_rows_index, dtype=np.int32)
+        cols_index = np.asarray(a=test_matrix_columns_index, dtype=np.int32)
+        data_to_insert = np.ones(len(test_matrix_rows_index), dtype=np.int8)
+        self.test_feature_matrix = csr_matrix((data_to_insert, (rows_index, cols_index)),
+                                              shape=(test_matrix_rows_index_counter, len(self.prec_positions)))
+
+    def test_node_positions(self, device_id, target_genere, prev1_genre, prev2_genre):
         """
         extract all potential features for a specific node before selection for test!
 
@@ -290,18 +333,13 @@ class Model:
         :return: a list of string which represents the potential - features for verifying weather its
         """
         if self.model_type == "Advanced":
-            cols_dict = dict()
-            cols_dict.update(config.col_action)
-            cols_dict.update(config.advanced_household32)
-
-            genere_dict = dict()
-            genere_dict.update(config.genere_cols)
-            genere_dict.update(config.advanced_household32)
+            config.col_action.update(config.advanced_household32)
+            config.genere_cols.update(config.advanced_household32)
 
         node = self.test_df.loc[device_id]
         feature_vector_positions = []
 
-        for col, (action, prefix) in cols_dict.items():
+        for col, (action, prefix) in config.col_action.items():
 
             if col in config.genere_cols:
                 continue
@@ -322,7 +360,6 @@ class Model:
         for col in config.genere_cols:
             action, prefix = config.col_action[col]
 
-
             # can be only 'Program Genre'
             if action == 'unique' or action == 'counter':
                 name = "{}_{}".format(prefix, target_genere)
@@ -337,7 +374,7 @@ class Model:
             elif action == 'double_interact':
                 col_1, col_2, col_3 = col
                 if prefix == 'g2':
-                    name = "{}_{}_{}".format(prefix, prev2_genre,prev1_genre, target_genere)
+                    name = "{}_{}_{}".format(prefix, prev2_genre, prev1_genre, target_genere)
                 else:
                     name = "{}_{}_{}_{}".format(prefix, node[col_1], node[col_2], target_genere)
 
@@ -385,7 +422,7 @@ class Model:
         """
         # dictionary: count devices for every house
         self.df_demo = self.df_demo.set_index(config.household_id)
-        arr_dev_per_house = np.zeros(shape=(self.df_demo.shape[0],1))
+        arr_dev_per_house = np.zeros(shape=(self.df_demo.shape[0], 1))
         i = 0
         for key in self.house_device:
             if self.df_demo.index[i] == key:
@@ -409,7 +446,6 @@ class Model:
         :return: dict the notes for every device.
         """
         self.dict_nodes_per_device = self.test_df.groupby(['Device ID'])['df_id'].apply(list).to_dict()
-
 
 
 if __name__ == '__main__':

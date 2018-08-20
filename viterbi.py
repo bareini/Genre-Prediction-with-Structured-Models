@@ -50,8 +50,9 @@ class Viterbi:
 
         return probability_table
 
-    def viterbi_algorithm(self, sequence ):
+    def viterbi_algorithm(self, sequence):
         """
+        :param sequence:
         :type sentence: list of words
         """
 
