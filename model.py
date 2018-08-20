@@ -56,9 +56,9 @@ class Model:
         self.init_features()
         # functions as build_features_head_modifier
         self.build_features_matrices()
-        self.dict_notes_per_device = None
+        self.dict_nodes_per_device = None
         self.notes_per_device()
-        self.devices_gen = list(self.dict_notes_per_device.keys())
+        # self.devices_gen = list(self.dict_nodes_per_device.keys())
 
 
     def init_features(self):
@@ -403,7 +403,7 @@ class Model:
 
         :return: dict the notes for every device.
         """
-        self.dict_notes_per_device = self.test_df.groupby(['Device ID'])['df_id'].apply(list).to_dict()
+        self.dict_nodes_per_device = self.test_df.groupby(['Device ID'])['df_id'].apply(list).to_dict()
 
 
 
