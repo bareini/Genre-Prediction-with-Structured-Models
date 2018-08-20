@@ -78,7 +78,6 @@ class Model:
                 self.features_position.update({"{}_{}".format(prefix, feature_val): next(self.feature_position_counter)
                                                for feature_val in temp_df[temp_df > config.thresholds[col]].index})
                 if col == config.x_program_genre:
-                    self.prec_positions.append(self.feature_position_counter)
                     self.all_tags_list = self.df_x[col].unique().tolist()
                     for genres in self.df_x[col].unique():
                         self.atomic_tags.update(set(genres.split(',')))
@@ -98,8 +97,7 @@ class Model:
                 self.features_position.update(
                     {"{}_{}_{}".format(prefix, col1, col2): next(self.feature_position_counter)
                      for col1, col2, val in temp_df.values})
-                if col_2 == config.x_program_genre:
-                    self.prec_positions.append(self.feature_position_counter)
+
             elif action == 'double_interact':
                 col_1, col_2, col_3 = col
                 temp_df = self.df_x.groupby([col_1, col_2, col_3], as_index=True).size()  # .reset_index()
@@ -107,10 +105,12 @@ class Model:
                 self.features_position.update(
                     {"{}_{}_{}_{}".format(prefix, col1, col2, col3): next(self.feature_position_counter)
                      for col1, col2, col3, val in temp_df.values})
-                if col_3 == config.x_program_genre:
-                    self.prec_positions.append(self.feature_position_counter)
+
         self.prec_positions = list(set(self.prec_positions))
         self.feature_from_demo()  # run the demographic feature init
+        for key in self.features_position.keys():
+                if key[3:] not in config.genre_prefixes:
+                    self.prec_positions.append(self.features_position[key])
         self.feature_vector_len = next(self.feature_position_counter)
 
     def build_features_matrices(self):
@@ -290,18 +290,13 @@ class Model:
         :return: a list of string which represents the potential - features for verifying weather its
         """
         if self.model_type == "Advanced":
-            cols_dict = dict()
-            cols_dict.update(config.col_action)
-            cols_dict.update(config.advanced_household32)
-
-            genere_dict = dict()
-            genere_dict.update(config.genere_cols)
-            genere_dict.update(config.advanced_household32)
+            config.col_action.update(config.advanced_household32)
+            config.genere_cols.update(config.advanced_household32)
 
         node = self.test_df.loc[device_id]
         feature_vector_positions = []
 
-        for col, (action, prefix) in cols_dict.items():
+        for col, (action, prefix) in config.col_action.items():
 
             if col in config.genere_cols:
                 continue
