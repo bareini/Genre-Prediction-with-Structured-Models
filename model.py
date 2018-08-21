@@ -49,7 +49,8 @@ class Model:
         self.atomic_tags = set()
         self.features_position = {}
         self.tags_seen_in_station = defaultdict(list)
-        self.true_genres = df_x['Program Genre'].tolist()
+        self.true_genres = df_x[config.x_program_genre].tolist()
+        self.test_true_genres = test_df[config.x_program_genre].tolist()
 
         self.feature_position_counter = count()
         self.prec_positions = []  # cols which are valid also for preceptron

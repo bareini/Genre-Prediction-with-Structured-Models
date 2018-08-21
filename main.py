@@ -72,7 +72,6 @@ if __name__ == "__main__":
     preceptron_pred = preceptron_clf.predict_genere(preceptron_input)  # todo: change to actual test set
     print(preceptron_pred)
 
-
     logging.info('{}: before preceptron evaluate'.format(time.asctime(time.localtime(time.time()))))
     evaluate = Evaluate(model)
     accuracy, recall, precision, f1 = evaluate.calc_acc_recall_precision(pred_labels=preceptron_pred)
@@ -85,7 +84,7 @@ if __name__ == "__main__":
 
     logging.info('{}: before_most_common'.format(time.asctime(time.localtime(time.time()))))
     most_common_value = Counter(model.true_genres).most_common()[0][0]
-    most_common = [most_common_value] * len(model.true_genres)
+    most_common = [most_common_value] * len(model.test_true_genres)
     print(most_common)
 
     evaluate = Evaluate(model)
@@ -122,6 +121,6 @@ if __name__ == "__main__":
     bin_accuracy = evaluate.bin_acc_recall_precision(pred_labels=memm_pred)
     evaluate.evaluate_per_dev()
     print(accuracy, recall, precision, bin_accuracy)
-    logging.info('{}: evaluate most_common: bin_accuracy: {}, accuracy:{}, recall: {}, precision: {}, f1: {}'.format(
+    logging.info('{}: evaluate MEMM: bin_accuracy: {}, accuracy:{}, recall: {}, precision: {}, f1: {}'.format(
         time.asctime(time.localtime(time.time())), bin_accuracy, accuracy, recall, precision, f1))
     pickle.dump(evaluate, open(os.path.join(directory, config.results_folder, 'memm_pred.pkl'), 'wb'))

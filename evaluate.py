@@ -22,8 +22,8 @@ class Evaluate:
         :return: 3 lists : acc_per_dec, recall_per_dev, precision_per_dev
         """
         i = 0
-        for key in self.model.dict_notes_per_device.keys():
-            end_list = i + len(self.model.dict_notes_per_device[key])
+        for key in self.model.dict_nodes_per_device.keys():
+            end_list = i + len(self.model.dict_nodes_per_device[key])
             self.acc_per_dec.append(np.mean(self.accuracy[i:end_list]))
             recall_i = np.mean(self.recall[i:end_list])
             self.recall_per_dev.append(recall_i)
@@ -40,7 +40,7 @@ class Evaluate:
         :param pred_labels prediction labels, true_labels
         :return accuracy, recall, precision
         """
-        true_labels = self.model.true_genres
+        true_labels = self.model.test_true_genres
         avg_accuracy = 0.0
         avg_recall = 0.0
         avg_precision = 0.0
@@ -77,7 +77,7 @@ class Evaluate:
 
     def bin_acc_recall_precision(self, pred_labels):
         bin_acc = []
-        true_labels = self.model.true_genres
+        true_labels = self.model.test_true_genres
         for i in range(len(true_labels)):
             bin_acc.append(1 if true_labels[i] == pred_labels[i] else 0)
 
