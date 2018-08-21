@@ -280,6 +280,7 @@ class Model:
         x_matrix = self.test_df.values  # type: np.matrix
 
         # todo: make sure this is changed back to MEMM!!
+        temp_type = self.model_type
         self.model_type = 'perceptron'
 
         relevant_demo_id = None
@@ -305,7 +306,7 @@ class Model:
 
             columns_index = []
 
-            current_features, _ = self.node_positions(node_index, None)
+            current_features, _ = self.test_node_positions(node_index, None, None, None)
             current_features.extend(demo_features)
 
             columns_index.extend(current_features)
@@ -320,6 +321,7 @@ class Model:
         data_to_insert = np.ones(len(test_matrix_rows_index), dtype=np.int8)
         self.test_feature_matrix = csr_matrix((data_to_insert, (rows_index, cols_index)),
                                               shape=(test_matrix_rows_index_counter, len(self.prec_positions)))
+        self.model_type = temp_type
 
     def test_node_positions(self, device_id, target_genere, prev1_genre, prev2_genre):
         """
@@ -356,30 +358,30 @@ class Model:
 
             if name in self.features_position:
                 feature_vector_positions.append(self.features_position[name])
+        if self.model_type != 'perceptron':
+            for col in config.genere_cols:
+                action, prefix = config.col_action[col]
 
-        for col in config.genere_cols:
-            action, prefix = config.col_action[col]
+                # can be only 'Program Genre'
+                if action == 'unique' or action == 'counter':
+                    name = "{}_{}".format(prefix, target_genere)
 
-            # can be only 'Program Genre'
-            if action == 'unique' or action == 'counter':
-                name = "{}_{}".format(prefix, target_genere)
+                elif action == 'interact':
+                    col_1, col_2 = col
+                    if prefix == 'g1':
+                        name = "{}_{}_{}".format(prefix, prev1_genre, target_genere)
+                    else:
+                        name = "{}_{}_{}".format(prefix, node[col_1], target_genere)
 
-            elif action == 'interact':
-                col_1, col_2 = col
-                if prefix == 'g1':
-                    name = "{}_{}_{}".format(prefix, prev1_genre, target_genere)
-                else:
-                    name = "{}_{}_{}".format(prefix, node[col_1], target_genere)
+                elif action == 'double_interact':
+                    col_1, col_2, col_3 = col
+                    if prefix == 'g2':
+                        name = "{}_{}_{}".format(prefix, prev2_genre, prev1_genre, target_genere)
+                    else:
+                        name = "{}_{}_{}_{}".format(prefix, node[col_1], node[col_2], target_genere)
 
-            elif action == 'double_interact':
-                col_1, col_2, col_3 = col
-                if prefix == 'g2':
-                    name = "{}_{}_{}".format(prefix, prev2_genre, prev1_genre, target_genere)
-                else:
-                    name = "{}_{}_{}_{}".format(prefix, node[col_1], node[col_2], target_genere)
-
-            if name in self.features_position:
-                feature_vector_positions.append(self.features_position[name])
+                if name in self.features_position:
+                    feature_vector_positions.append(self.features_position[name])
 
         return feature_vector_positions, len(feature_vector_positions)
 

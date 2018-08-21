@@ -32,12 +32,12 @@ if __name__ == "__main__":
     logging.info('{}: Start running'.format(time.asctime(time.localtime(time.time()))))
     print('{}: Start running'.format(time.asctime(time.localtime(time.time()))))
     df_x = pd.read_pickle(os.path.join(data_dir, config.viewing_data_name))
-    # df_demo = pd.read_csv(os.path.join(data_dir, config.demo_file_name), index_col=0)
-    df_demo = pd.read_pickle(os.path.join(data_dir, config.demo_file_name))
+    df_demo = pd.read_csv(os.path.join(data_dir, config.demo_file_name), index_col=0)
+    # df_demo = pd.read_pickle(os.path.join(data_dir, config.demo_file_name))
     device_house_dict = pickle.load(open(os.path.join(data_dir, config.device_house_dict), 'rb'))
     house_device_dict = pickle.load(open(os.path.join(data_dir, config.house_device_dict), 'rb'))
     # # todo: fix in the code!!!!!!@!#!@#@$#
-    # device_house_dict = device_house_dict[config.household_id]
+    device_house_dict = device_house_dict[config.household_id]
 
     threshold = round(len(df_x.groupby(['Device ID'])) * config.train_threshold)
     g = df_x.groupby(['Device ID']).groups
@@ -68,6 +68,7 @@ if __name__ == "__main__":
     preceptron_clf = MLpreceptron.MulticlasslabelPerceptron(preceptron_input, model.true_genres,
                                                             list(set(model.true_genres)), model.atomic_tags, 10)
     model.create_test_matrix()
+    preceptron_input = model.test_feature_matrix
     preceptron_pred = preceptron_clf.predict_genere(preceptron_input)  # todo: change to actual test set
     print(preceptron_pred)
 
