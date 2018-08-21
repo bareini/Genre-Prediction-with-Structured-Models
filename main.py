@@ -39,10 +39,12 @@ if __name__ == "__main__":
     # # todo: fix in the code!!!!!!@!#!@#@$#
     device_house_dict = device_house_dict[config.household_id]
 
+    # df_x = df_x.iloc[0:50,:]
+
     threshold = round(len(df_x.groupby(['Device ID'])) * config.train_threshold)
     g = df_x.groupby(['Device ID']).groups
     df_demo = df_demo.drop([config.voter], axis=1)
-    dev_threshold = list(g)[threshold]
+    dev_threshold = list(g)[threshold-1]
     idx = g[dev_threshold][-1]
     dfx_train = df_x.loc[:idx, ]
     dfx_test = df_x.loc[idx + 1:, ]
@@ -70,8 +72,9 @@ if __name__ == "__main__":
     model.create_test_matrix()
     preceptron_input = model.test_feature_matrix
     preceptron_pred = preceptron_clf.predict_genere(preceptron_input)  # todo: change to actual test set
-    print(preceptron_pred)
+    print('preceptron_pred:{}'.format(preceptron_pred))
 
+    # evaluate preceptron
     logging.info('{}: before preceptron evaluate'.format(time.asctime(time.localtime(time.time()))))
     evaluate = Evaluate(model)
     accuracy, recall, precision, f1 = evaluate.calc_acc_recall_precision(pred_labels=preceptron_pred)
@@ -87,6 +90,7 @@ if __name__ == "__main__":
     most_common = [most_common_value] * len(model.test_true_genres)
     print(most_common)
 
+    # evaluate most common
     evaluate = Evaluate(model)
     accuracy, recall, precision, f1 = evaluate.calc_acc_recall_precision(pred_labels=most_common)
     bin_accuracy = evaluate.bin_acc_recall_precision(pred_labels=most_common)
@@ -106,6 +110,7 @@ if __name__ == "__main__":
     logging.info('{}: before viterbi'.format(time.asctime(time.localtime(time.time()))))
     viterbi = Viterbi(model, memm.w)
     memm_pred = []
+    # todo; make avilalble when the sequences dict is merged
     for seq in model.dict_nodes_per_device.values():
         if len(seq) < 3:
             continue
@@ -115,6 +120,7 @@ if __name__ == "__main__":
     # seq = model.dict_notes_per_device['00000047d22b']
     # pred = viterbi.viterbi_algorithm(seq)
 
+    # evaluate model - memm
     logging.info('{}: before evaluate'.format(time.asctime(time.localtime(time.time()))))
     evaluate = Evaluate(model)
     accuracy, recall, precision, f1 = evaluate.calc_acc_recall_precision(pred_labels=memm_pred)
