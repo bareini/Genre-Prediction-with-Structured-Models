@@ -69,43 +69,49 @@ class Model:
 
         :return None:
         """
-        for col, (action, prefix) in config.col_action.items():
-            if action == 'counter':
-                # todo: take it out to function
-                temp_df = self.df_x[col].value_counts()
-                self.features_position.update({"{}_{}".format(prefix, feature_val): next(self.feature_position_counter)
-                                               for feature_val in temp_df[temp_df > config.thresholds[col]].index})
-                if col == config.x_program_genre:
-                    self.all_tags_list = self.df_x[col].unique().tolist()
-                    for genres in self.df_x[col].unique():
-                        self.atomic_tags.update(set(genres.split(',')))
-            elif action == 'unique':
-                self.features_position.update(
-                    {"{}_{}".format(prefix, feature_val): next(self.feature_position_counter)
-                     for feature_val in self.df_x[col].astype(str).unique()})
-            elif action == 'interact':
-                col_1, col_2 = col
-                temp_df = self.df_x.groupby([col_1, col_2], as_index=True).size()
-                if prefix == config.station_genre:
-                    temp_df = temp_df.reset_index()
-                    for col1, col2, val in temp_df.values:
-                        self.tags_seen_in_station[col1].append(col2)
-                    continue
-                temp_df = temp_df[temp_df > config.thresholds[col]].reset_index()
-                self.features_position.update(
-                    {"{}_{}_{}".format(prefix, col1, col2): next(self.feature_position_counter)
-                     for col1, col2, val in temp_df.values})
+        self.feature_from_demo()  # run the demographic feature init
+        for dict_cols in config.All_cols:
+            for col, (action, prefix) in dict_cols.items():
+                if action == 'counter':
+                    # todo: take it out to function
+                    temp_df = self.df_x[col].value_counts()
+                    self.features_position.update({"{}_{}".format(prefix, feature_val): next(self.feature_position_counter)
+                                                   for feature_val in temp_df[temp_df > config.thresholds[col]].index})
+                    if col == config.x_program_genre:
+                        self.all_tags_list = self.df_x[col].unique().tolist()
+                        for genres in self.df_x[col].unique():
+                            self.atomic_tags.update(set(genres.split(',')))
+                elif action == 'unique':
+                    self.features_position.update(
+                        {"{}_{}".format(prefix, feature_val): next(self.feature_position_counter)
+                         for feature_val in self.df_x[col].astype(str).unique()})
+                elif action == 'interact':
+                    col_1, col_2 = col
+                    temp_df = self.df_x.groupby([col_1, col_2], as_index=True).size()
+                    # if prefix == config.station_genre:
+                    #     temp_df = temp_df.reset_index()
+                    #     for col1, col2, val in temp_df.values:
+                    #         self.tags_seen_in_station[col1].append(col2)
+                    #     continue
+                    temp_df = temp_df[temp_df > config.thresholds[col]].reset_index()
+                    self.features_position.update(
+                        {"{}_{}_{}".format(prefix, col1, col2): next(self.feature_position_counter)
+                         for col1, col2, val in temp_df.values})
 
-            elif action == 'double_interact':
-                col_1, col_2, col_3 = col
-                temp_df = self.df_x.groupby([col_1, col_2, col_3], as_index=True).size()  # .reset_index()
-                temp_df = temp_df[temp_df > config.thresholds[col]].reset_index()
-                self.features_position.update(
-                    {"{}_{}_{}_{}".format(prefix, col1, col2, col3): next(self.feature_position_counter)
-                     for col1, col2, col3, val in temp_df.values})
+                elif action == 'double_interact':
+                    col_1, col_2, col_3 = col
+                    temp_df = self.df_x.groupby([col_1, col_2, col_3], as_index=True).size()  # .reset_index()
+                    temp_df = temp_df[temp_df > config.thresholds[col]].reset_index()
+                    self.features_position.update(
+                        {"{}_{}_{}_{}".format(prefix, col1, col2, col3): next(self.feature_position_counter)
+                         for col1, col2, col3, val in temp_df.values})
+                    if prefix == config.station_time_genre:
+                        temp_df = temp_df.reset_index()
+                        for col0, col1, col2, col3, col4 in temp_df.values:
+                            self.tags_seen_in_station[col1, col2].append(col3)
+                        continue
 
         self.prec_positions = list(set(self.prec_positions))
-        self.feature_from_demo()  # run the demographic feature init
         for key in self.features_position.keys():
                 if key[:2] not in config.genre_prefixes:
                     self.prec_positions.append(self.features_position[key])
