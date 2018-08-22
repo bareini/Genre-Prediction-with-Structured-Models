@@ -93,7 +93,9 @@ genere_cols = {
     ('prev_2_genre', 'prev_1_genre', 'Program Genre'): ['double_interact', 'g2'],
     ('Station Number', 'Program Genre'): ['interact', 'c1'],
     ('duration_bins', 'Program Genre'): ['interact', 'p4'],   # NEW!
-    ('part_of_day', 'prev_1_genre', 'Program Genre'): ['double_interact', 'g3']  # NEW!
+    ('part_of_day', 'prev_1_genre', 'Program Genre'): ['double_interact', 'g3'],  # NEW!
+    ('part_of_day', 'Station Number', 'Program Genre'): ['double_interact', 'g4'],  # NEW!
+
 
 }
 
@@ -150,3 +152,5 @@ station_num = 'Station Number'
 train_threshold = 0.8
 genre_prefixes = ['g0', 'g1', 'g2','g3', 'i0','c1','p4']
 station_time_genre = 'g4'
+part_of_day_genre = 'i1'
+part_of_day = 'part_of_day'

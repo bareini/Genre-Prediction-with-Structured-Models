@@ -1,6 +1,7 @@
 import logging
 from itertools import count
 from collections import defaultdict
+from typing import List, Any
 
 import pandas as pd
 from scipy.sparse import csr_matrix
@@ -14,7 +15,6 @@ class Model:
     """
     the model builder
     """
-
     def __init__(self, df_demo, df_x, house_device, device_house, model_type, test_df=None):
         """
 
@@ -51,6 +51,7 @@ class Model:
         self.tags_seen_in_station = defaultdict(list)
         self.true_genres = df_x[config.x_program_genre].tolist()
         self.test_true_genres = test_df[config.x_program_genre].tolist()
+        self.tags_seen_in_part_of_day = defaultdict(list)
 
         self.feature_position_counter = count()
         self.prec_positions = []  # cols which are valid also for preceptron
@@ -88,11 +89,11 @@ class Model:
                 elif action == 'interact':
                     col_1, col_2 = col
                     temp_df = self.df_x.groupby([col_1, col_2], as_index=True).size()
-                    # if prefix == config.station_genre:
-                    #     temp_df = temp_df.reset_index()
-                    #     for col1, col2, val in temp_df.values:
-                    #         self.tags_seen_in_station[col1].append(col2)
-                    #     continue
+                    if prefix == config.part_of_day_genre:
+                        temp_df = temp_df.reset_index()
+                        for col1, col2, val in temp_df.values:
+                            self.tags_seen_in_part_of_day[col1].append(col2)
+                        continue
                     temp_df = temp_df[temp_df > config.thresholds[col]].reset_index()
                     self.features_position.update(
                         {"{}_{}_{}".format(prefix, col1, col2): next(self.feature_position_counter)
