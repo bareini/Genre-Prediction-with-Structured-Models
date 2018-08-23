@@ -38,10 +38,16 @@ if __name__ == "__main__":
     house_device_dict = pickle.load(open(os.path.join(data_dir, config.house_device_dict), 'rb'))
     # # todo: fix in the code!!!!!!@!#!@#@$#
     # device_house_dict = device_house_dict[config.household_id]
+    df_x.drop(columns=['event_time', 'End_Time'], inplace=True)
 
-    df_x = df_x.loc[df_x[config.x_device_id].isin(['00000000d40c', '00000000e365', '00000002d28e', '0000000b5e91',
-                                                   '0000000caab5', '0000000d4da9', '0000000daf9a', '0000000dc288',
-                                                   '0000000e0238', '0000000e5ae0'])]
+    df_x = df_x.loc[df_x[config.x_device_id].isin(['00000000d40c','00000000e365','00000002d28e','0000000b5e91',
+                                                   '0000000caab5','0000000d4da9','0000000daf9a','0000000dc288'])]
+                                                   # '0000000e0238','0000000e5ae0','0000000f366d','000000121d08',
+                                                   # '0000001259d6','00000012f93e','0000001a1bda','0000001dd66e',
+                                                   # '00000020379d','0000002053e8','0000002428ad','00000025874f',
+                                                   # '0000002672c7','0000002779f9','00000029111f','0000002a0d27',
+                                                   # '000000314ac6','00000032f54b',
+                                                   # '000000346256','00000037cb88','00000038640b','0000003b575c'])]
 
     threshold = round(len(df_x.groupby(['Device ID'])) * config.train_threshold)
     g = df_x.groupby(['Device ID']).groups
@@ -57,7 +63,7 @@ if __name__ == "__main__":
     house_device_dict = dict(list(house_device_dict.items()))
     df_x_temp = df_x
 
-    logging.info('{}: before create perceptron model'.format(time.asctime(time.localtime(time.time()))))
+    logging.info('{}: before create model'.format(time.asctime(time.localtime(time.time()))))
     model = Model(df_demo=df_demo,
                   df_x=dfx_train,
                   house_device=house_device_dict,
@@ -65,7 +71,7 @@ if __name__ == "__main__":
                   model_type='basic',
                   test_df=dfx_test)
     pickle.dump(model, open(os.path.join(directory, config.dict_folder, 'basic_model.pkl'), 'wb'))
-    # model = pickle.load(open(os.path.join(base_directory, config.models_folder, 'model.pkl'),'rb'))
+    # model = pickle.load(open(os.path.join(base_directory, config.models_folder, 'basic_model.pkl'),'rb'))
 
     # Baselines - baseline predictions
     # most_common = MLpreceptron.return_common_stupid(df_x['Program Genre'])
@@ -73,7 +79,7 @@ if __name__ == "__main__":
     logging.info('{}: before preceptron'.format(time.asctime(time.localtime(time.time()))))
     preceptron_input = model.train_feature_matrix.tocsc()[:, model.prec_positions]
     preceptron_clf = MLpreceptron.MulticlasslabelPerceptron(preceptron_input, model.true_genres,
-                                                            list(set(model.true_genres)), model.atomic_tags, 10)
+                                                            list(set(model.true_genres)), model.atomic_tags, 20)
     model.create_test_matrix()
     preceptron_input = model.test_feature_matrix
     preceptron_pred = preceptron_clf.predict_genere(preceptron_input)  # todo: change to actual test set
@@ -95,6 +101,8 @@ if __name__ == "__main__":
     most_common = [most_common_value] * len(model.test_true_genres)
     print(most_common)
 
+    top_10 = Counter(model.true_genres).most_common()[0][0]
+
     # evaluate most common
     evaluate = Evaluate(model)
     accuracy, recall, precision, f1 = evaluate.calc_acc_recall_precision(pred_labels=most_common)
@@ -114,7 +122,7 @@ if __name__ == "__main__":
 
     logging.info('{}: before viterbi'.format(time.asctime(time.localtime(time.time()))))
     # todo: change not from pickle
-    viterbi = Viterbi(model, memm.w)
+    viterbi = Viterbi(model, memm.w, preceptron_clf, most_common_value)
     # viterbi = pickle.load(open(os.path.join(base_directory, config.models_folder, 'viterbi.pkl'), 'rb'))
     memm_pred = []
     # todo; make avilalble when the sequences dict is merged
