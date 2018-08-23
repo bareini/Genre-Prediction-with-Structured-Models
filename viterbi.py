@@ -67,6 +67,7 @@ class Viterbi:
         :param sequence:
         :type sentence: list of words
         """
+        seq_len = len(sequence)
 
         tags_seen_in_train = self.model.all_tags_list
         tags_seen_in_station = self.model.tags_seen_in_station
@@ -80,7 +81,7 @@ class Viterbi:
         pie[(0, "**", "*")] = 1.0
         Sk_2, Sk_1 = ["**"], ["*"]
 
-        for k in range(1, len(sequence) + 1):
+        for k in range(1, seq_len + 1):
 
             # Sk = tags_seen_in_train
             # if Sk_1 != ["*"]:
@@ -153,11 +154,12 @@ class Viterbi:
 
                     pie[(k, u, v)] = pie_max
                     bp[(k, u, v)] = bp_max
-            Sk_2 = Sk_1
-            Sk_1 = Sk
+            if k < seq_len:
+                Sk_2 = Sk_1
+                Sk_1 = Sk
 
         t = {}
-        n = len(sequence)
+        n = seq_len
         pie_max = 0
         for u in Sk_1:
             for v in Sk:
