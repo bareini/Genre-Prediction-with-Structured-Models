@@ -55,7 +55,7 @@ if __name__ == "__main__":
     # dfx_test = df_x.loc[11:15, ]
 
     house_device_dict = dict(list(house_device_dict.items()))
-    df_x_temp = df_x
+    # df_x_temp = df_x
 
     logging.info('{}: before create perceptron model'.format(time.asctime(time.localtime(time.time()))))
     model = Model(df_demo=df_demo,
@@ -65,30 +65,31 @@ if __name__ == "__main__":
                   model_type='basic',
                   test_df=dfx_test)
     pickle.dump(model, open(os.path.join(directory, config.dict_folder, 'basic_model.pkl'), 'wb'))
-    # model = pickle.load(open(os.path.join(base_directory, config.models_folder, 'model.pkl'),'rb'))
+    # model = pickle.load(open(os.path.join(base_directory, config.models_folder, 'basic_model.pkl'), 'rb'))
 
     # Baselines - baseline predictions
     # most_common = MLpreceptron.return_common_stupid(df_x['Program Genre'])
-
+    num_of_iter = config.num_of_iters
     logging.info('{}: before preceptron'.format(time.asctime(time.localtime(time.time()))))
     preceptron_input = model.train_feature_matrix.tocsc()[:, model.prec_positions]
     preceptron_clf = MLpreceptron.MulticlasslabelPerceptron(preceptron_input, model.true_genres,
-                                                            list(set(model.true_genres)), model.atomic_tags, 10)
+                                                            list(set(model.true_genres)), model.atomic_tags, num_of_iter)
     model.create_test_matrix()
     preceptron_input = model.test_feature_matrix
     preceptron_pred = preceptron_clf.predict_genere(preceptron_input)  # todo: change to actual test set
     print('preceptron_pred:{}'.format(preceptron_pred))
 
     # evaluate preceptron
-    logging.info('{}: before preceptron evaluate'.format(time.asctime(time.localtime(time.time()))))
+    logging.info('{}: before preceptron evaluate_{}'.format(time.asctime(time.localtime(time.time())), num_of_iter))
     evaluate = Evaluate(model)
     accuracy, recall, precision, f1 = evaluate.calc_acc_recall_precision(pred_labels=preceptron_pred)
     bin_accuracy = evaluate.bin_acc_recall_precision(pred_labels=preceptron_pred)
     evaluate.evaluate_per_dev()
-    logging.info('{}: evaluate preceptron: bin_accuracy: {}, accuracy:{}, recall: {}, precision: {}, f1: {}'.format(
-        time.asctime(time.localtime(time.time())),
+    logging.info('{}: evaluate preceptron_{}: bin_accuracy: {}, accuracy:{}, recall: {}, precision: {}, f1: {}'.format(
+        time.asctime(time.localtime(time.time())), num_of_iter,
         bin_accuracy, accuracy, recall, precision, f1))
-    pickle.dump(evaluate, open(os.path.join(directory, config.results_folder, 'perceptron_evaluate.pkl'), 'wb'))
+    pickle.dump(evaluate, open(
+        os.path.join(directory, config.results_folder, 'perceptron_evaluate_{}.pkl'.format(num_of_iter)), 'wb'))
 
     logging.info('{}: before_most_common'.format(time.asctime(time.localtime(time.time()))))
     most_common_value = Counter(model.true_genres).most_common()[0][0]

@@ -154,3 +154,5 @@ genre_prefixes = ['g0', 'g1', 'g2','g3', 'i0','c1','p4']
 station_time_genre = 'g4'
 part_of_day_genre = 'i1'
 part_of_day = 'part_of_day'
+
+num_of_iters = 3
