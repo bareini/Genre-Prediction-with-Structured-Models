@@ -50,7 +50,12 @@ class Evaluate:
             recall_i = 0.0
             correct_for_label = 0
             true_i = true_labels[i].split(',')
-            pred_i = pred_labels[i].split(',')
+            try:
+                pred_i = pred_labels[i].split(',')
+            except IndexError as e:
+                print("pred_labels: {}, len of true labels: {}, i: {}".format(
+                    pred_labels, len(true_labels), i))
+                raise
             for j in range(len(pred_i)):
                 pred = pred_i[j]
                 if pred in true_i:

@@ -13,10 +13,10 @@ models_folder = 'models'
 
 # data files
 daily_prog_data = os.path.join("data", "DailyProgramData_04012015.csv")
-viewing_data_name = 'viewing.pkl'
-demo_file_name = 'demographic_features.csv'
-device_house_dict = 'dev_house_dict.pkl'
-house_device_dict = 'house_dev_dict.pkl'
+viewing_data_name = 'viewing_final.pkl.gz'
+demo_file_name = 'demo.pkl.gz'
+device_house_dict = 'dev_house_dict_new.pkl'
+house_device_dict = 'house_dev_dict_new.pkl'
 weights_file_name = os.path.join(weights_folder, 'my_weights.txt')
 results_file_name = os.path.join(results_folder, 'my_results.txt')
 
