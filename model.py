@@ -48,7 +48,7 @@ class Model:
         self.feature_vector_len = 0
         self.atomic_tags = set()
         self.features_position = {}
-        self.tags_seen_in_station = defaultdict(list)
+        self.tags_seen_in_station = defaultdict(set)
         self.true_genres = df_x[config.x_program_genre].tolist()
         self.test_true_genres = test_df[config.x_program_genre].tolist()
         self.tags_seen_in_part_of_day = defaultdict(list)
@@ -89,11 +89,11 @@ class Model:
                 elif action == 'interact':
                     col_1, col_2 = col
                     temp_df = self.df_x.groupby([col_1, col_2], as_index=True).size()
-                    if prefix == config.part_of_day_genre:
-                        temp_df = temp_df.reset_index()
-                        for col1, col2, val in temp_df.values:
-                            self.tags_seen_in_part_of_day[col1].append(col2)
-                        continue
+                    # if prefix == config.part_of_day_genre:
+                    #     temp_df = temp_df.reset_index()
+                    #     for col1, col2, val in temp_df.values:
+                    #         self.tags_seen_in_part_of_day[col1].append(col2)
+                    #     continue
                     temp_df = temp_df[temp_df > config.thresholds[col]].reset_index()
                     self.features_position.update(
                         {"{}_{}_{}".format(prefix, col1, col2): next(self.feature_position_counter)
@@ -109,7 +109,7 @@ class Model:
                     if prefix == config.station_time_genre:
                         temp_df = temp_df.reset_index()
                         for col0, col1, col2, col3, col4 in temp_df.values:
-                            self.tags_seen_in_station[col1, col2].append(col3)
+                            self.tags_seen_in_station[col1, col2].update({col3})
                         continue
 
         self.prec_positions = list(set(self.prec_positions))
@@ -117,6 +117,7 @@ class Model:
                 if key[:2] not in config.genre_prefixes:
                     self.prec_positions.append(self.features_position[key])
         self.feature_vector_len = next(self.feature_position_counter)
+        self.calc_top_k_seen_in_part_of_day()
 
     def build_features_matrices(self):
         """
@@ -477,6 +478,20 @@ class Model:
         :return: dict the notes for every device.
         """
         self.dict_nodes_per_device = self.test_df.groupby(['Device ID'])['df_id'].apply(list).to_dict()
+
+    def calc_top_k_seen_in_part_of_day(self):
+        """
+        updates tags seen in part of day
+
+        :return: nothing
+        """
+        k = config.num_of_top_k # the top k seen in part of day
+        df = self.df_x[[config.part_of_day, config.x_program_genre]]
+        b = df.groupby([config.part_of_day])[config.x_program_genre].value_counts()
+        c = b.groupby([config.part_of_day]).head(k).rename(columns={config.x_program_genre: 'a'}).reset_index().drop(columns=0)
+        d = c.groupby([config.part_of_day], as_index=True)[config.x_program_genre].apply(sorted).apply(tuple).reset_index()
+        self.tags_seen_in_part_of_day = d.set_index(config.part_of_day).to_dict()[config.x_program_genre]
+
 
 
 if __name__ == '__main__':

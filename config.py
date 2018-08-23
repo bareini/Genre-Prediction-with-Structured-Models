@@ -13,12 +13,13 @@ models_folder = 'models'
 
 # data files
 daily_prog_data = os.path.join("data", "DailyProgramData_04012015.csv")
-viewing_data_name = 'viewing_final.pkl.gz'
+viewing_data_name = 'viewing_temp.pkl.gz'
 demo_file_name = 'demo.pkl.gz'
 device_house_dict = 'dev_house_dict_new.pkl'
 house_device_dict = 'house_dev_dict_new.pkl'
 weights_file_name = os.path.join(weights_folder, 'my_weights.txt')
 results_file_name = os.path.join(results_folder, 'my_results.txt')
+household_list = 'hh_list.pkl'
 
 # features:
 """
@@ -154,5 +155,8 @@ genre_prefixes = ['g0', 'g1', 'g2','g3', 'i0','c1','p4']
 station_time_genre = 'g4'
 part_of_day_genre = 'i1'
 part_of_day = 'part_of_day'
+num_of_top_k = 5
+x_household_id = 'household_id'
+
 
 num_of_iters = 3
