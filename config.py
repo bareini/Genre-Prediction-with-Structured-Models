@@ -65,8 +65,24 @@ col_action = {
     ('prev_1_genre', 'Program Genre'): ['interact', 'g1'],
     ('prev_2_genre', 'prev_1_genre', 'Program Genre'): ['double_interact', 'g2'],
     ('part_of_day', 'prev_1_genre', 'Program Genre'): ['double_interact', 'g3'], # NEW!
+    ('part_of_day', 'Station Number', 'Program Genre'): ['double_interact', 'g4'],  # NEW!
     ('Station Number', 'Program Genre'): ['interact', 'c1']
 }
+
+no_genre_cols = {
+    'event_weekday': ['unique', 't0'],
+    'part_of_day': ['unique', 't1'],
+    'duration_bins': ['unique', 'p0'],
+    'view_bins': ['unique', 'p1'],
+    'completion_bins': ['unique', 'p2'],
+    'Station Number': ['counter', 'p3'],
+    ('part_of_day', 'event_weekday'): ['interact', 't3'],
+    ('part_of_day', 'Station Number', 'Program Genre'): ['double_interact', 'g4'],  # NEW!
+
+}
+
+
+
 # 'Program Genre' must appear last in the feature name string
 genere_cols = {
 
@@ -77,9 +93,15 @@ genere_cols = {
     ('prev_2_genre', 'prev_1_genre', 'Program Genre'): ['double_interact', 'g2'],
     ('Station Number', 'Program Genre'): ['interact', 'c1'],
     ('duration_bins', 'Program Genre'): ['interact', 'p4'],   # NEW!
-    ('part_of_day', 'prev_1_genre', 'Program Genre'): ['double_interact', 'g3']  # NEW!
+    ('part_of_day', 'prev_1_genre', 'Program Genre'): ['double_interact', 'g3'],  # NEW!
+    ('part_of_day', 'Station Number', 'Program Genre'): ['double_interact', 'g4'],  # NEW!
+
 
 }
+
+All_cols = [
+    no_genre_cols, genere_cols
+]
 
 # NEW!
 advanced_household32 = {
@@ -96,15 +118,19 @@ advanced_household33 = {
 }
 
 thresholds = {
-    'Program Genre': 0,
-    ('part_of_day', 'event_weekday'): 0,
-    ('event_weekday', 'Program Genre'): 0,
-    ('part_of_day', 'Program Genre'): 0,
-    ('prev_1_genre', 'Program Genre'): 0,
-    ('prev_2_genre', 'prev_1_genre', 'Program Genre'): 0,
-    ('duration_bins', 'Program Genre'): 0,
+    'Program Genre': 10,
+    ('part_of_day', 'event_weekday'): 3,
+    ('event_weekday', 'Program Genre'): 3,
+    ('part_of_day', 'Program Genre'): 3,
+    ('prev_1_genre', 'Program Genre'): 3,
+    ('prev_2_genre', 'prev_1_genre', 'Program Genre'): 2,
+    ('duration_bins', 'Program Genre'): 3,
     ('part_of_day', 'prev_1_genre', 'Program Genre'): 0,
-    'Station Number': 0,
+    'Station Number': 3,
+    ('part_of_day', 'prev_1_genre', 'Program Genre'): 3,  # NEW!
+    ('part_of_day', 'Station Number', 'Program Genre'): 5,  # NEW!
+    ('Station Number', 'Program Genre'): 10,
+
 }
 
 
@@ -125,3 +151,6 @@ voter = 'Voter/Party'
 station_num = 'Station Number'
 train_threshold = 0.8
 genre_prefixes = ['g0', 'g1', 'g2','g3', 'i0','c1','p4']
+station_time_genre = 'g4'
+part_of_day_genre = 'i1'
+part_of_day = 'part_of_day'

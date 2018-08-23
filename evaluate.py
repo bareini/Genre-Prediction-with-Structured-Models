@@ -29,7 +29,8 @@ class Evaluate:
             self.recall_per_dev.append(recall_i)
             precision_i = np.mean(self.precision[i:end_list])
             self.precision_per_dev.append(precision_i)
-            self.f1_per_dev.append((2 * precision_i * recall_i) / (precision_i + recall_i))
+            f1_i = (((2 * precision_i * recall_i) / (precision_i + recall_i)) if precision_i + recall_i != 0.0 else 0.0)
+            self.f1_per_dev.append(f1_i)
             i = end_list
 
 

@@ -50,6 +50,39 @@ class Viterbi:
 
         return probability_table
 
+    def probability2(self, Sk_2, Sk_1, Sk, device_id, k):
+        """
+        :param Sk_2:
+        :param Sk_1:
+        :param Sk:
+        :param sentence:
+        :param k: the current position
+        :return:
+        """
+
+        probability_table = defaultdict(tuple)
+        weights = self.weights
+
+        # get demo features
+        if device_id is not None:
+            relevant_demo_id = self.model.device_house[device_id]
+            demo_features, demo_feature_count = self.model.demo_positions(relevant_demo_id)
+
+        for t in Sk_2:
+            for u in Sk_1:
+                for v in Sk:
+                    features_positions, _ = self.model.test_node_positions(k, v, u, t )
+                    features_positions.extend(demo_features)
+
+                    probability_table[(t, u, v)] = np.exp(sum(weights[features_positions]))
+
+                # Constant Denominator
+                denominator = np.sum(probability_table[(t, u, v)] for v in Sk)
+                for v in Sk:
+                    probability_table[(t, u, v)] /= denominator
+
+        return probability_table
+
     def viterbi_algorithm(self, sequence):
         """
         :param sequence:
@@ -73,15 +106,20 @@ class Viterbi:
             Sk_2 = tags_seen_in_train
 
             current_station = self.model.test_df.loc[sequence[k-1], config.station_num]
+            current_part_of_day = self.model.test_df.loc[sequence[k-1], config.part_of_day]
 
             # if the word appeared in the training data with tags we assign this tags to S
             if current_station in tags_seen_in_station:
-                Sk = tags_seen_in_station[current_station]
+                Sk = tags_seen_in_station[current_part_of_day, current_station]
+            else:
+                Sk = self.model.tags_seen_in_part_of_day[current_part_of_day]
 
             if k != 1:
                 prev1_sation = self.model.test_df.loc[sequence[k - 2], config.station_num]
                 if prev1_sation in tags_seen_in_station:
                     Sk_1 = tags_seen_in_station[prev1_sation]
+                else:
+                    Sk_1 = self.model.tags_seen_in_part_of_day[current_part_of_day]
             else:
                 Sk_2, Sk_1 = ["**"], ["*"]
 
@@ -90,6 +128,8 @@ class Viterbi:
                 prev2_sation = self.model.test_df.loc[sequence[k - 3], config.station_num]
                 if prev2_sation in tags_seen_in_station:
                     Sk_2 = tags_seen_in_station[prev2_sation]
+                else:
+                    Sk_2 = self.model.tags_seen_in_part_of_day[current_part_of_day]
             elif k == 2:
                 Sk_2 = ["*"]
             device_id = self.model.test_df.loc[sequence[k-1], config.x_device_id]

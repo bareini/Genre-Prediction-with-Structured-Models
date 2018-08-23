@@ -1,6 +1,7 @@
 import logging
 from itertools import count
 from collections import defaultdict
+from typing import List, Any
 
 import pandas as pd
 from scipy.sparse import csr_matrix
@@ -14,7 +15,6 @@ class Model:
     """
     the model builder
     """
-
     def __init__(self, df_demo, df_x, house_device, device_house, model_type, test_df=None):
         """
 
@@ -51,6 +51,7 @@ class Model:
         self.tags_seen_in_station = defaultdict(list)
         self.true_genres = df_x[config.x_program_genre].tolist()
         self.test_true_genres = test_df[config.x_program_genre].tolist()
+        self.tags_seen_in_part_of_day = defaultdict(list)
 
         self.feature_position_counter = count()
         self.prec_positions = []  # cols which are valid also for preceptron
@@ -69,45 +70,51 @@ class Model:
 
         :return None:
         """
-        for col, (action, prefix) in config.col_action.items():
-            if action == 'counter':
-                # todo: take it out to function
-                temp_df = self.df_x[col].value_counts()
-                self.features_position.update({"{}_{}".format(prefix, feature_val): next(self.feature_position_counter)
-                                               for feature_val in temp_df[temp_df > config.thresholds[col]].index})
-                if col == config.x_program_genre:
-                    self.all_tags_list = self.df_x[col].unique().tolist()
-                    for genres in self.df_x[col].unique():
-                        self.atomic_tags.update(set(genres.split(',')))
-            elif action == 'unique':
-                self.features_position.update(
-                    {"{}_{}".format(prefix, feature_val): next(self.feature_position_counter)
-                     for feature_val in self.df_x[col].astype(str).unique()})
-            elif action == 'interact':
-                col_1, col_2 = col
-                temp_df = self.df_x.groupby([col_1, col_2], as_index=True).size()
-                if prefix == config.station_genre:
-                    temp_df = temp_df.reset_index()
-                    for col1, col2, val in temp_df.values:
-                        self.tags_seen_in_station[col1].append(col2)
-                    continue
-                temp_df = temp_df[temp_df > config.thresholds[col]].reset_index()
-                self.features_position.update(
-                    {"{}_{}_{}".format(prefix, col1, col2): next(self.feature_position_counter)
-                     for col1, col2, val in temp_df.values})
+        self.feature_from_demo()  # run the demographic feature init
+        for dict_cols in config.All_cols:
+            for col, (action, prefix) in dict_cols.items():
+                if action == 'counter':
+                    # todo: take it out to function
+                    temp_df = self.df_x[col].value_counts()
+                    self.features_position.update({"{}_{}".format(prefix, feature_val): next(self.feature_position_counter)
+                                                   for feature_val in temp_df[temp_df > config.thresholds[col]].index})
+                    if col == config.x_program_genre:
+                        self.all_tags_list = self.df_x[col].unique().tolist()
+                        for genres in self.df_x[col].unique():
+                            self.atomic_tags.update(set(genres.split(',')))
+                elif action == 'unique':
+                    self.features_position.update(
+                        {"{}_{}".format(prefix, feature_val): next(self.feature_position_counter)
+                         for feature_val in self.df_x[col].astype(str).unique()})
+                elif action == 'interact':
+                    col_1, col_2 = col
+                    temp_df = self.df_x.groupby([col_1, col_2], as_index=True).size()
+                    if prefix == config.part_of_day_genre:
+                        temp_df = temp_df.reset_index()
+                        for col1, col2, val in temp_df.values:
+                            self.tags_seen_in_part_of_day[col1].append(col2)
+                        continue
+                    temp_df = temp_df[temp_df > config.thresholds[col]].reset_index()
+                    self.features_position.update(
+                        {"{}_{}_{}".format(prefix, col1, col2): next(self.feature_position_counter)
+                         for col1, col2, val in temp_df.values})
 
-            elif action == 'double_interact':
-                col_1, col_2, col_3 = col
-                temp_df = self.df_x.groupby([col_1, col_2, col_3], as_index=True).size()  # .reset_index()
-                temp_df = temp_df[temp_df > config.thresholds[col]].reset_index()
-                self.features_position.update(
-                    {"{}_{}_{}_{}".format(prefix, col1, col2, col3): next(self.feature_position_counter)
-                     for col1, col2, col3, val in temp_df.values})
+                elif action == 'double_interact':
+                    col_1, col_2, col_3 = col
+                    temp_df = self.df_x.groupby([col_1, col_2, col_3], as_index=True).size()  # .reset_index()
+                    temp_df = temp_df[temp_df > config.thresholds[col]].reset_index()
+                    self.features_position.update(
+                        {"{}_{}_{}_{}".format(prefix, col1, col2, col3): next(self.feature_position_counter)
+                         for col1, col2, col3, val in temp_df.values})
+                    if prefix == config.station_time_genre:
+                        temp_df = temp_df.reset_index()
+                        for col0, col1, col2, col3, col4 in temp_df.values:
+                            self.tags_seen_in_station[col1, col2].append(col3)
+                        continue
 
         self.prec_positions = list(set(self.prec_positions))
-        self.feature_from_demo()  # run the demographic feature init
         for key in self.features_position.keys():
-                if key[3:] not in config.genre_prefixes:
+                if key[:2] not in config.genre_prefixes:
                     self.prec_positions.append(self.features_position[key])
         self.feature_vector_len = next(self.feature_position_counter)
 
@@ -151,6 +158,9 @@ class Model:
                 if device_id is not None:
                     relevant_demo_id = self.device_house[device_id]
                     demo_features, demo_feature_count = self.demo_positions(relevant_demo_id)
+                    non_gernre_features, non_genre_feature_count = self.node_position_no_genre(node_index)
+                    device_features = demo_features + non_gernre_features
+
 
             # indexes for possible labels matrix
             word_matrix_rows_index_counter = 0
@@ -166,9 +176,9 @@ class Model:
                 # todo: fearture creater that returns the relevant indexes
 
                 # used to be self.features.create_features
-                current_features, ones_counter = self.node_positions(node_index, possible_genre)
-                current_features.extend(demo_features)
-                ones_counter += demo_feature_count
+                current_features, ones_counter = self.node_positions_genre(node_index, possible_genre)
+                current_features.extend(device_features)
+                ones_counter += demo_feature_count + non_genre_feature_count
 
                 # for feature in current_features:
                 #     if feature in self.features_position:
@@ -212,7 +222,7 @@ class Model:
 
         logger.debug("DependencyParsing: build_features_head_modifier <--------------")
 
-    def node_positions(self, device_id, target_genere):
+    def node_position_no_genre(self,device_id):
         """
         extract all potential features for a specific node before selection
 
@@ -248,6 +258,24 @@ class Model:
 
             if name in self.features_position:
                 feature_vector_positions.append(self.features_position[name])
+
+        return feature_vector_positions, len(feature_vector_positions)
+
+
+    def node_positions_genre(self, device_id, target_genere):
+        """
+        extract all potential features for a specific node before selection
+
+        :param node the line from the dfs which describes a specific view
+
+        :param prev1_node_label: genre of the previous view - string
+        :param prev2_node_label:  genre of the 2-previous view - string
+        :param target_genere:  the genere we are considering
+        :return: a list of string which represents the potential - features for verifying weather its
+        """
+
+        node = self.df_x.loc[device_id]
+        feature_vector_positions = []
 
         if self.model_type != 'perceptron':
             for col in config.genere_cols:
