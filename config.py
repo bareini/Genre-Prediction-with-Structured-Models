@@ -182,3 +182,6 @@ part_of_day = 'part_of_day'
 num_of_top_k = 5
 x_household_id = 'household_id'
 x_clustered_genre = 'program_genre_clustered'
+
+
+num_of_iters = 3
