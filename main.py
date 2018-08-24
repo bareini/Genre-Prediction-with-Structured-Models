@@ -31,112 +31,172 @@ if __name__ == "__main__":
 
     logging.info('{}: Start running'.format(time.asctime(time.localtime(time.time()))))
     print('{}: Start running'.format(time.asctime(time.localtime(time.time()))))
-    df_x = pd.read_pickle(os.path.join(data_dir, config.viewing_data_name))
     # df_demo = pd.read_csv(os.path.join(data_dir, config.demo_file_name), index_col=0)
     df_demo = pd.read_pickle(os.path.join(data_dir, config.demo_file_name))
+    df_demo = df_demo.drop([config.voter], axis=1)
     device_house_dict = pickle.load(open(os.path.join(data_dir, config.device_house_dict), 'rb'))
     house_device_dict = pickle.load(open(os.path.join(data_dir, config.house_device_dict), 'rb'))
-    # # todo: fix in the code!!!!!!@!#!@#@$#
-    # device_house_dict = device_house_dict[config.household_id]
     hh_ids = pickle.load(open(os.path.join(base_directory, config.models_folder, config.household_list), 'rb'))
 
-    df_x = df_x.loc[df_x[config.x_household_id].isin(hh_ids)]
-
-    threshold = round(len(df_x.groupby(['Device ID'])) * config.train_threshold)
-    g = df_x.groupby(['Device ID']).groups
-    df_demo = df_demo.drop([config.voter], axis=1)
-    dev_threshold = list(g)[threshold-1]
-    idx = g[dev_threshold][-1]
-    dfx_train = df_x.loc[:idx, ]
-    dfx_test = df_x.loc[idx + 1:, ]
-
-    # dfx_train = df_x.loc[:10, ]
-    # dfx_test = df_x.loc[11:15, ]
-
     house_device_dict = dict(list(house_device_dict.items()))
-    df_x_temp = df_x
 
-    logging.info('{}: before create model'.format(time.asctime(time.localtime(time.time()))))
-    model = Model(df_demo=df_demo,
-                  df_x=dfx_train,
-                  house_device=house_device_dict,
-                  device_house=device_house_dict,
-                  model_type='basic',
-                  test_df=dfx_test)
-    pickle.dump(model, open(os.path.join(directory, config.dict_folder, 'basic_model.pkl'), 'wb'))
-    # model = pickle.load(open(os.path.join(base_directory, config.models_folder, 'basic_model.pkl'), 'rb'))
+    for type in config.model_types:
+        if type in ['basic', 'Advanced', 'Advanced2']:
+            df_x = pd.read_pickle(os.path.join(data_dir, config.viewing_data_name))
 
-    # Baselines - baseline predictions
-    # most_common = MLpreceptron.return_common_stupid(df_x['Program Genre'])
+            df_x = df_x.loc[df_x[config.x_household_id].isin(hh_ids)]
+            threshold = round(len(df_x.groupby(['Device ID'])) * config.train_threshold)
+            g = df_x.groupby(['Device ID']).groups
+            dev_threshold = list(g)[threshold - 1]
+            idx = g[dev_threshold][-1]
+            dfx_train = df_x.loc[:idx, ]
+            dfx_test = df_x.loc[idx + 1:, ]
 
-    logging.info('{}: before preceptron'.format(time.asctime(time.localtime(time.time()))))
-    preceptron_input = model.train_feature_matrix.tocsc()[:, model.prec_positions]
-    preceptron_clf = MLpreceptron.MulticlasslabelPerceptron(preceptron_input, model.true_genres,
-                                                            list(set(model.true_genres)), model.atomic_tags, 20)
-    model.create_test_matrix()
-    preceptron_input = model.test_feature_matrix
-    preceptron_pred = preceptron_clf.predict_genere(preceptron_input)  # todo: change to actual test set
-    print('preceptron_pred:{}'.format(preceptron_pred))
+            logging.info('{}: before create model: {}'.format(time.asctime(time.localtime(time.time())), type))
+            model = Model(df_demo=df_demo,
+                          df_x=dfx_train,
+                          house_device=house_device_dict,
+                          device_house=device_house_dict,
+                          model_type=type,
+                          test_df=dfx_test)
+            model_name = '{}_model.pkl'.format(type)
+            pickle.dump(model, open(os.path.join(directory, config.dict_folder, model_name), 'wb'))
 
-    # evaluate preceptron
-    logging.info('{}: before preceptron evaluate'.format(time.asctime(time.localtime(time.time()))))
-    evaluate = Evaluate(model)
-    accuracy, recall, precision, f1 = evaluate.calc_acc_recall_precision(pred_labels=preceptron_pred)
-    bin_accuracy = evaluate.bin_acc_recall_precision(pred_labels=preceptron_pred)
-    evaluate.evaluate_per_dev()
-    logging.info('{}: evaluate preceptron: bin_accuracy: {}, accuracy:{}, recall: {}, precision: {}, f1: {}'.format(
-        time.asctime(time.localtime(time.time())),
-        bin_accuracy, accuracy, recall, precision, f1))
-    pickle.dump(evaluate, open(os.path.join(directory, config.results_folder, 'perceptron_evaluate.pkl'), 'wb'))
+        else:
+            df_x = None
+            dfx_train = None
+            dfx_test = None
+            # load clustering dataframe
+            df_full = pd.read_pickle(os.path.join(data_dir, config.clusters_df))
+            df_full = df_full.loc[df_full[config.x_household_id].isin(hh_ids)]
 
-    logging.info('{}: before_most_common'.format(time.asctime(time.localtime(time.time()))))
-    most_common_value = Counter(model.true_genres).most_common()[0][0]
-    most_common = [most_common_value] * len(model.test_true_genres)
-    print(most_common)
+            threshold = round(len(df_full.groupby(['Device ID'])) * config.train_threshold)
+            g = df_full.groupby(['Device ID']).groups
+            dev_threshold = list(g)[threshold - 1]
+            idx = g[dev_threshold][-1]
+            df_full_train = df_full.loc[:idx, ]
+            df_full_test = df_full.loc[idx + 1:, ]
 
-    # top_10 = Counter(model.true_genres).most_common()[0][0]
+            df_clusters = pd.read_pickle(os.path.join(data_dir, config.full_viewing))
+            df_clusters = df_clusters.loc[df_clusters[config.x_household_id].isin(hh_ids)]
 
-    # evaluate most common
-    evaluate = Evaluate(model)
-    accuracy, recall, precision, f1 = evaluate.calc_acc_recall_precision(pred_labels=most_common)
-    bin_accuracy = evaluate.bin_acc_recall_precision(pred_labels=most_common)
-    evaluate.evaluate_per_dev()
-    logging.info('{}: evaluate most_common: bin_accuracy:{}, accuracy:{}, recall:{}, precision:{}, f1: {}'.format(
-        time.asctime(time.localtime(time.time())), bin_accuracy, accuracy, recall, precision, f1))
-    pickle.dump(evaluate, open(os.path.join(directory, config.results_folder, 'most_common.pkl'), 'wb'))
+            df_clusters_train = df_clusters.loc[:idx, ]
+            df_clusters_test = df_clusters.loc[idx + 1:, ]
 
-    logging.info('{}: before memm'.format(time.asctime(time.localtime(time.time()))))
-    memm = ParametersMEMM(model, 0.1)
+            logging.info('{}: before create clusters model'.format(time.asctime(time.localtime(time.time()))))
+            model = Model(df_demo=df_demo,
+                          df_x=df_clusters_train,
+                          house_device=house_device_dict,
+                          device_house=device_house_dict,
+                          model_type=type,
+                          test_df=df_clusters_test)
+            model_name = '{}_cluster_model.pkl'.format(type)
+            pickle.dump(model, open(os.path.join(directory, config.dict_folder, model_name), 'wb'))
 
-    weights_filename = os.path.join(directory, config.weights_file_name)
-    results_filename = os.path.join(directory, config.results_file_name)
+            logging.info('{}: before clusters_memm'.format(time.asctime(time.localtime(time.time()))))
+            memm = ParametersMEMM(model, 0.1)
 
-    memm.gradient_decent(weights_filename, results_filename)
+            weights_filename = os.path.join(directory, "{}_{}".format(type, config.weights_file_name))
+            results_filename = os.path.join(directory, "{}_{}".format(type, config.results_file_name))
 
-    logging.info('{}: before viterbi'.format(time.asctime(time.localtime(time.time()))))
-    # todo: change not from pickle
-    viterbi = Viterbi(model, memm.w, preceptron_clf, most_common_value)
-    # viterbi = pickle.load(open(os.path.join(base_directory, config.models_folder, 'viterbi.pkl'), 'rb'))
-    memm_pred = []
-    # todo; make avilalble when the sequences dict is merged
-    for seq in model.dict_nodes_per_device.values():
-        if len(seq) < 3:
-            continue
-        pred = viterbi.viterbi_algorithm(seq)
-        memm_pred.extend(pred)
+            memm.gradient_decent(weights_filename, results_filename)
 
-    # seq = model.dict_notes_per_device['00000047d22b']
-    # pred = viterbi.viterbi_algorithm(seq)
+            logging.info('{}: before clusters viterbi'.format(time.asctime(time.localtime(time.time()))))
+            # todo: change not from pickle
+            clusters_viterbi = Viterbi(model, memm.w)
+            memm_pred = []
 
-    pickle.dump(viterbi, open(os.path.join(directory, config.dict_folder, "viterbi.pkl"), 'wb'))
-    pickle.dump(memm_pred, open(os.path.join(directory, config.dict_folder, "memm_pred.pkl"), 'wb'))
-    # evaluate model - memm
-    logging.info('{}: before evaluate'.format(time.asctime(time.localtime(time.time()))))
-    evaluate = Evaluate(model)
-    accuracy, recall, precision, f1 = evaluate.calc_acc_recall_precision(pred_labels=memm_pred)
-    bin_accuracy = evaluate.bin_acc_recall_precision(pred_labels=memm_pred)
-    evaluate.evaluate_per_dev()
-    print(accuracy, recall, precision, bin_accuracy)
-    logging.info('{}: evaluate MEMM: bin_accuracy: {}, accuracy:{}, recall: {}, precision: {}, f1: {}'.format(
-        time.asctime(time.localtime(time.time())), bin_accuracy, accuracy, recall, precision, f1))
-    pickle.dump(evaluate, open(os.path.join(directory, config.results_folder, 'memm_evaluate.pkl'), 'wb'))
+            for seq in model.dict_nodes_per_device.values():
+                pred = clusters_viterbi.viterbi_algorithm(seq)
+                memm_pred.extend(pred)
+
+            # create full model
+            logging.info('{}: before create model'.format(time.asctime(time.localtime(time.time()))))
+            df_full[config.x_clustered_genre] = memm_pred
+            model = Model(df_demo=df_demo,
+                          df_x=df_full_train,
+                          house_device=house_device_dict,
+                          device_house=device_house_dict,
+                          model_type=type,
+                          test_df=df_full_test)
+            model_name = '{}_model.pkl'.format(type)
+            pickle.dump(model, open(os.path.join(directory, config.dict_folder, model_name), 'wb'))
+
+        # model = pickle.load(open(os.path.join(base_directory, config.models_folder, 'basic_model.pkl'), 'rb'))
+
+        # Baselines - baseline predictions
+        # most_common = MLpreceptron.return_common_stupid(df_x['Program Genre'])
+
+        # logging.info('{}: before preceptron'.format(time.asctime(time.localtime(time.time()))))
+        # preceptron_input = model.train_feature_matrix.tocsc()[:, model.prec_positions]
+        # preceptron_clf = MLpreceptron.MulticlasslabelPerceptron(preceptron_input, model.true_genres,
+        #                                                         list(set(model.true_genres)), model.atomic_tags, 3)
+        # model.create_test_matrix()
+        # preceptron_input = model.test_feature_matrix
+        # preceptron_pred = preceptron_clf.predict_genere(preceptron_input)  # todo: change to actual test set
+        # print('preceptron_pred:{}'.format(preceptron_pred))
+        #
+        # # evaluate preceptron
+        # logging.info('{}: before preceptron evaluate'.format(time.asctime(time.localtime(time.time()))))
+        # evaluate = Evaluate(model)
+        # accuracy, recall, precision, f1 = evaluate.calc_acc_recall_precision(pred_labels=preceptron_pred)
+        # bin_accuracy = evaluate.bin_acc_recall_precision(pred_labels=preceptron_pred)
+        # evaluate.evaluate_per_dev()
+        # logging.info('{}: evaluate preceptron: bin_accuracy: {}, accuracy:{}, recall: {}, precision: {}, f1: {}'.format(
+        #     time.asctime(time.localtime(time.time())),
+        #     bin_accuracy, accuracy, recall, precision, f1))
+        # pickle.dump(evaluate, open(os.path.join(directory, config.results_folder, 'perceptron_evaluate.pkl'), 'wb'))
+        #
+        # logging.info('{}: before_most_common'.format(time.asctime(time.localtime(time.time()))))
+        # most_common_value = Counter(model.true_genres).most_common()[0][0]
+        # most_common = [most_common_value] * len(model.test_true_genres)
+        # print(most_common)
+
+        # top_10 = Counter(model.true_genres).most_common()[0][0]
+
+        # # evaluate most common
+        # evaluate = Evaluate(model)
+        # accuracy, recall, precision, f1 = evaluate.calc_acc_recall_precision(pred_labels=most_common)
+        # bin_accuracy = evaluate.bin_acc_recall_precision(pred_labels=most_common)
+        # evaluate.evaluate_per_dev()
+        # logging.info('{}: evaluate most_common: bin_accuracy:{}, accuracy:{}, recall:{}, precision:{}, f1: {}'.format(
+        #     time.asctime(time.localtime(time.time())), bin_accuracy, accuracy, recall, precision, f1))
+        # pickle.dump(evaluate, open(os.path.join(directory, config.results_folder, 'most_common.pkl'), 'wb'))
+
+        logging.info('{}: before memm'.format(time.asctime(time.localtime(time.time()))))
+        memm = ParametersMEMM(model, 0.1)
+
+        weights_filename = os.path.join(directory, "{}_{}".format(type, config.weights_file_name))
+        results_filename = os.path.join(directory, "{}_{}".format(type, config.results_file_name))
+
+        memm.gradient_decent(weights_filename, results_filename)
+
+        logging.info('{}: before viterbi'.format(time.asctime(time.localtime(time.time()))))
+        # todo: change not from pickle
+        viterbi = Viterbi(model, memm.w)
+        # viterbi = pickle.load(open(os.path.join(base_directory, config.models_folder, 'viterbi.pkl'), 'rb'))
+        memm_pred = []
+        # todo; make avilalble when the sequences dict is merged
+        for seq in model.dict_nodes_per_device.values():
+            # if len(seq) < 3:
+            #     continue
+            pred = viterbi.viterbi_algorithm(seq)
+            memm_pred.extend(pred)
+
+        # seq = model.dict_notes_per_device['00000047d22b']
+        # pred = viterbi.viterbi_algorithm(seq)
+
+        pickle.dump(viterbi, open(os.path.join(directory, config.dict_folder, "viterbi.pkl"), 'wb'))
+        pickle.dump(memm_pred, open(os.path.join(directory, config.dict_folder, "memm_pred_{}.pkl".format(type)), 'wb'))
+        # evaluate model - memm
+        logging.info('{}: before evaluate'.format(time.asctime(time.localtime(time.time()))))
+        evaluate = Evaluate(model)
+        accuracy, recall, precision, f1 = evaluate.calc_acc_recall_precision(pred_labels=memm_pred)
+        bin_accuracy = evaluate.bin_acc_recall_precision(pred_labels=memm_pred)
+        evaluate.evaluate_per_dev()
+        print(accuracy, recall, precision, bin_accuracy)
+        logging.info('{}: evaluate MEMM: bin_accuracy: {}, accuracy:{}, recall: {}, precision: {}, f1: {}'.format(
+            time.asctime(time.localtime(time.time())), bin_accuracy, accuracy, recall, precision, f1))
+
+        pickle.dump(evaluate,
+                    open(os.path.join(directory, config.results_folder, 'memm_evaluate_{}.pkl'.format(type)), 'wb'))

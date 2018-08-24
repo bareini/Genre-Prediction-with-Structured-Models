@@ -13,13 +13,15 @@ models_folder = 'models'
 
 # data files
 daily_prog_data = os.path.join("data", "DailyProgramData_04012015.csv")
-viewing_data_name = 'viewing_temp.pkl.gz'
+viewing_data_name = 'viewing_final.pkl.gz'
 demo_file_name = 'demo.pkl.gz'
 device_house_dict = 'dev_house_dict_new.pkl'
 house_device_dict = 'house_dev_dict_new.pkl'
 weights_file_name = os.path.join(weights_folder, 'my_weights.txt')
 results_file_name = os.path.join(results_folder, 'my_results.txt')
 household_list = 'hh_list.pkl'
+clusters_df = 'viewing_clustered.pkl.gz'
+full_viewing = 'viewing_full_advance_clustered.pkl.gz'
 
 # features:
 """
@@ -104,7 +106,6 @@ All_cols = [
     no_genre_cols, genere_cols
 ]
 
-# NEW!
 advanced_household32 = {
     'gen_in_dev_hh_1': ['counter', 'h0'],
     ('gen_in_dev_hh_1', 'Program Genre'): ['interact', 'h1'],
@@ -113,10 +114,26 @@ advanced_household32 = {
     ('part_of_day', 'gen_in_dev_hh_1', 'Program Genre'): ['double_interact', 'h4']
 }
 
-# NEW!
-advanced_household33 = {
+advanced_pattern2 = {
+    'gen_in_advance_1': ['counter', 'ad0'],
+    ('gen_in_advance_1', 'Program Genre'): ['interact', 'ad1'],
+    ('gen_in_advance_1', 'part_of_day'): ['interact', 'ad2'],
+    ('event_weekday', 'gen_in_advance_1'): ['interact', 'h3'],
+    ('part_of_day', 'gen_in_advance_1', 'Program Genre'): ['double_interact', 'ad4']
+}
+
+cluster_cols = {
+    'program_genre_clustered': ['counter', 'ad0'],
+    ('program_genre_clustered', 'Program Genre'): ['interact', 'ad1'],
+    ('prev_1_genre_clustered', 'part_of_day'): ['interact', 'ad2'],
+    ('event_weekday', 'program_genre_clustered'): ['interact', 'ad3'],
+    ('prev_1_genre_clustered', 'program_genre_clustered', 'Program Genre'): ['double_interact', 'ad4'],
+    ('prev_2_genre_clustered', 'prev_1_genre_clustered', 'program_genre_clustered'): ['double_interact', 'ad5']
+    #  ('gen_in_dev_hh_1_clustered', 'program_genre_clustered'): ['interact', 'ad6'],
+    #  ('gen_in_dev_hh_1_clustered', 'Program Genre'): ['interact', 'ad7']
 
 }
+
 
 thresholds = {
     'Program Genre': 10,
@@ -128,12 +145,19 @@ thresholds = {
     ('duration_bins', 'Program Genre'): 3,
     ('part_of_day', 'prev_1_genre', 'Program Genre'): 0,
     'Station Number': 3,
-    ('part_of_day', 'prev_1_genre', 'Program Genre'): 3,  # NEW!
-    ('part_of_day', 'Station Number', 'Program Genre'): 5,  # NEW!
+    ('part_of_day', 'prev_1_genre', 'Program Genre'): 3,
+    ('part_of_day', 'Station Number', 'Program Genre'): 5,
     ('Station Number', 'Program Genre'): 10,
+    'gen_in_advance_1': 5,
+    ('gen_in_advance_1', 'Program Genre'): 5,
+    ('gen_in_advance_1', 'part_of_day'): 5,
+    ('event_weekday', 'gen_in_advance_1'): 5,
+    ('gen_in_advance_1_prev1', 'gen_in_advance_1', 'Program Genre'): 5,
+    ('gen_in_advance_1_prev2', 'gen_in_advance_1_prev1', 'Program Genre'): 5
 
 }
 
+model_types = ['basic', 'Advanced']
 
 # genres
 # genere_map =
@@ -157,3 +181,4 @@ part_of_day_genre = 'i1'
 part_of_day = 'part_of_day'
 num_of_top_k = 5
 x_household_id = 'household_id'
+x_clustered_genre = 'program_genre_clustered'

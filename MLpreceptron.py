@@ -148,10 +148,12 @@ class MulticlasslabelPerceptron():
         for i in range(iterations):
 
             res = self.predict(examples)
+            logging.info('{}: done fit'.format(time.asctime(time.localtime(time.time()))))
 
             for j in range(len(res)):
                 if self.labels_mapping[res[j]] != true_labels[j]:
-
+                    if j%100 == 0:
+                        logging.info('{}: iteration'.format(time.asctime(time.localtime(time.time()))))
                     factor = 1
                     # reduce the weight of predicted class
                     self.update_weight(examples[j], -factor, res[j])
