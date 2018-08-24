@@ -16,18 +16,14 @@ logger = logging.getLogger("viterbi")
 
 class Viterbi:
 
-    def __init__(self, model, weights_vec, perceptron, most_common):
+    def __init__(self, model, weights_vec):
         """
 
         :param Model model:
         :param weights_vec:
-        :param perceptron:
-        :param most_common:
         """
         self.weights = weights_vec
         self.model = model
-        self.perceptron = perceptron
-        self.most_common = most_common
 
     def probability(self, Sk_2, Sk_1, Sk, device_id, k):
         """

@@ -53,6 +53,9 @@ class Model:
         self.test_true_genres = test_df[config.x_program_genre].tolist()
         self.tags_seen_in_part_of_day = defaultdict(list)
 
+        if config.x_clustered_genre in self.df_x.columns:
+            self.propagate_predicted_cluster()
+
         self.feature_position_counter = count()
         self.prec_positions = []  # cols which are valid also for preceptron
         self.init_features()
@@ -279,6 +282,17 @@ class Model:
         feature_vector_positions = []
 
         if self.model_type != 'perceptron':
+
+            if self.model_type == 'advanced2':
+                config.col_action.update(config.advanced_pattern2)
+                config.genere_cols.update(config.advanced_pattern2)
+            elif self.model_type == "advanced":
+                config.col_action.update(config.advanced_household32)
+                config.genere_cols.update(config.advanced_household32)
+            if self.model_type == "creative":
+                config.col_action.update(config.cluster_cols)
+                config.genere_cols.update(config.cluster_cols)
+
             for col in config.genere_cols:
                 action, prefix = config.col_action[col]
 
@@ -364,9 +378,15 @@ class Model:
         :param target_genere:  the genere we are considering
         :return: a list of string which represents the potential - features for verifying weather its
         """
-        if self.model_type == "Advanced":
+        if self.model_type == 'advanced2':
+            config.col_action.update(config.advanced_pattern2)
+            config.genere_cols.update(config.advanced_pattern2)
+        elif self.model_type == "advanced":
             config.col_action.update(config.advanced_household32)
             config.genere_cols.update(config.advanced_household32)
+        if self.model_type == "creative":
+            config.col_action.update(config.cluster_cols)
+            config.genere_cols.update(config.cluster_cols)
 
         node = self.test_df.loc[device_id]
         feature_vector_positions = []
@@ -492,6 +512,25 @@ class Model:
         d = c.groupby([config.part_of_day], as_index=True)[config.x_program_genre].apply(sorted).apply(tuple).reset_index()
         self.tags_seen_in_part_of_day = d.set_index(config.part_of_day).to_dict()[config.x_program_genre]
 
+    # def propagate_predicted_cluster(self):
+    #     """
+    #
+    #     :return:
+    #     """
+    #     reversed_clustered = {}
+    #
+    #     # df_program_viewing['program_genre_clustered'] = df_program_viewing['Program Genre'].map(revresed_clustered)
+    #
+    #     df_program_viewing['prev_1_genre_clustered'] = df_program_viewing.groupby('Device ID')[
+    #         'program_genre_clustered'].shift(1).fillna('*')
+    #     df_program_viewing['prev_2_genre_clustered'] = df_program_viewing.groupby('Device ID')[
+    #         'program_genre_clustered'].shift(2).fillna('**')
+    #     df_program_viewing.loc[(df_program_viewing['prev_2_genre_clustered'] == '**')
+    #                            & (df_program_viewing['prev_1_genre_clustered'] != '*'), 'prev_2_genre'] = '*'
+    #     df_program_viewing['gen_in_dev_hh_1_clustered'] = df_program_viewing['gen_in_dev_hh_1'].map(
+    #         revresed_clustered).fillna(-1)
+    #     df_program_viewing['gen_in_advance_1_clustered'] = df_program_viewing['gen_in_advance_1'].map(
+    #         revresed_clustered).fillna(-1)
 
 
 if __name__ == '__main__':
