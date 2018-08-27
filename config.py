@@ -164,6 +164,8 @@ thresholds = {
 
 model_types = ['creative']
 
+inner_clustered_type = 'basic_clustered'
+
 # genres
 # genere_map =
 
@@ -195,3 +197,4 @@ x_clustered_advanced_1 = 'gen_in_dev_hh_1_clustered'
 x_clustered_advanced_1_loc = 'advance_1_node_id'
 
 num_of_iters = 3
+

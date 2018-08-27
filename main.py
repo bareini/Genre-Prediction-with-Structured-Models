@@ -81,21 +81,23 @@ if __name__ == "__main__":
             df_clusters_train = df_clusters.loc[:idx, ]
             df_clusters_test = df_clusters.loc[idx + 1:, ]
 
+            inner_type = config.inner_clustered_type
+
             logging.info('{}: before create clusters model'.format(time.asctime(time.localtime(time.time()))))
             model = Model(df_demo=df_demo,
                           df_x=df_clusters_train,
                           house_device=house_device_dict,
                           device_house=device_house_dict,
-                          model_type=type_,
+                          model_type=inner_type,
                           test_df=df_clusters)
-            model_name = '{}_cluster_model.pkl'.format(type_)
+            model_name = '{}_cluster_model.pkl'.format(inner_type)
             pickle.dump(model, open(os.path.join(directory, config.dict_folder, model_name), 'wb'))
 
             logging.info('{}: before clusters_memm'.format(time.asctime(time.localtime(time.time()))))
             memm = ParametersMEMM(model, 0.1)
 
-            weights_filename = os.path.join(directory, "{}_{}.txt".format(config.weights_file_name, type_))
-            results_filename = os.path.join(directory, "{}_{}.txt".format(config.results_file_name, type_))
+            weights_filename = os.path.join(directory, "{}_{}.txt".format(config.weights_file_name, inner_type))
+            results_filename = os.path.join(directory, "{}_{}.txt".format(config.results_file_name, inner_type))
 
             memm.gradient_decent(weights_filename, results_filename)
 
@@ -127,7 +129,6 @@ if __name__ == "__main__":
 
             df_full_train = df_full.loc[:idx, ]
             df_full_test = df_full.loc[idx + 1:, ]
-
 
             # create full model
             logging.info('{}: before create model'.format(time.asctime(time.localtime(time.time()))))

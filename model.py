@@ -16,6 +16,7 @@ class Model:
     """
     the model builder
     """
+
     def __init__(self, df_demo, df_x, house_device, device_house, model_type, test_df=None):
         """
 
@@ -71,14 +72,16 @@ class Model:
 
         :return None:
         """
+        logger.info("{}: init features <--------------".format(time.asctime(time.localtime(time.time()))))
         self.feature_from_demo()  # run the demographic feature init
         for dict_cols in config.All_cols:
             for col, (action, prefix) in dict_cols.items():
                 if action == 'counter':
                     # todo: take it out to function
                     temp_df = self.df_x[col].value_counts()
-                    self.features_position.update({"{}_{}".format(prefix, feature_val): next(self.feature_position_counter)
-                                                   for feature_val in temp_df[temp_df > config.thresholds[col]].index})
+                    self.features_position.update(
+                        {"{}_{}".format(prefix, feature_val): next(self.feature_position_counter)
+                         for feature_val in temp_df[temp_df > config.thresholds[col]].index})
                     if col == config.x_program_genre:
                         self.all_tags_list = self.df_x[col].unique().tolist()
                         for genres in self.df_x[col].unique():
@@ -118,10 +121,11 @@ class Model:
 
         self.prec_positions = list(set(self.prec_positions))
         for key in self.features_position.keys():
-                if key[:2] not in config.genre_prefixes:
-                    self.prec_positions.append(self.features_position[key])
+            if key[:2] not in config.genre_prefixes:
+                self.prec_positions.append(self.features_position[key])
         self.feature_vector_len = next(self.feature_position_counter)
         self.calc_top_k_seen_in_part_of_day()
+        logger.info("{}: init features -------------->".format(time.asctime(time.localtime(time.time()))))
 
     def build_features_matrices(self):
         """
@@ -131,7 +135,8 @@ class Model:
         :return:
         """
         # todo: make sure that df_x is sorted by device -> time
-        logger.debug("DependencyParsing: build_features_head_modifier -------------->")
+        logger.info("{}: build features matrices <--------------".format(time.asctime(time.localtime(time.time()))))
+        start = time.time()
         # todo: question everything
         self.df_cols_dict = {'x': {name_: id_ for id_, name_ in enumerate(self.df_x.columns)}}
         self.df_cols_dict.update({'demo': {name_: id_ for id_, name_ in enumerate(self.df_demo.columns)}})
@@ -165,7 +170,6 @@ class Model:
                     demo_features, demo_feature_count = self.demo_positions(relevant_demo_id)
                     non_gernre_features, non_genre_feature_count = self.node_position_no_genre(node_index)
                     device_features = demo_features + non_gernre_features
-
 
             # indexes for possible labels matrix
             word_matrix_rows_index_counter = 0
@@ -222,12 +226,14 @@ class Model:
         data_to_insert = np.ones(len(training_matrix_rows_index), dtype=np.int8)
         self.train_feature_matrix = csr_matrix((data_to_insert, (rows_index, cols_index)),
                                                shape=(training_matrix_rows_index_counter, self.feature_vector_len))
+        end = time.time()
+        logger.info("{}: build features matrices in {}s --------------> ".format(
+            time.asctime(time.localtime(time.time()))
+            , end-start))
 
-        logger.info("create_features_vector_for_train <-------------- ")
+        # logger.debug("DependencyParsing: build_features_head_modifier <--------------")
 
-        logger.debug("DependencyParsing: build_features_head_modifier <--------------")
-
-    def node_position_no_genre(self,device_id):
+    def node_position_no_genre(self, device_id):
         """
         extract all potential features for a specific node before selection
 
@@ -265,7 +271,6 @@ class Model:
                 feature_vector_positions.append(self.features_position[name])
 
         return feature_vector_positions, len(feature_vector_positions)
-
 
     def node_positions_genre(self, device_id, target_genere):
         """
@@ -321,6 +326,8 @@ class Model:
 
         :return: None
         """
+        logger.info("{}: create test matrix <--------------".format(time.asctime(time.localtime(time.time()))))
+        start = time.time()
         # todo: embed in the build_features_matrices
         x_matrix = self.test_df.values  # type: np.matrix
 
@@ -367,6 +374,10 @@ class Model:
         self.test_feature_matrix = csr_matrix((data_to_insert, (rows_index, cols_index)),
                                               shape=(test_matrix_rows_index_counter, len(self.prec_positions)))
         self.model_type = temp_type
+        end = time.time()
+        logger.info("{}:create test matrix {}s --------------> ".format(
+            time.asctime(time.localtime(time.time()))
+            , end-start))
 
     def test_node_positions(self, device_id, target_genere, prev1_genre, prev2_genre):
         """
@@ -506,20 +517,27 @@ class Model:
 
         :return: nothing
         """
-        k = config.num_of_top_k # the top k seen in part of day
+        logger.info("{}: calc top-k seen in part of day <--------------".format(
+            time.asctime(time.localtime(time.time()))))
+
+        k = config.num_of_top_k  # the top k seen in part of day
         df = self.df_x[[config.part_of_day, config.x_program_genre]]
         b = df.groupby([config.part_of_day])[config.x_program_genre].value_counts()
-        c = b.groupby([config.part_of_day]).head(k).rename(columns={config.x_program_genre: 'a'}).reset_index().drop(columns=0)
-        d = c.groupby([config.part_of_day], as_index=True)[config.x_program_genre].apply(sorted).apply(tuple).reset_index()
+        c = b.groupby([config.part_of_day]).head(k).rename(columns={config.x_program_genre: 'a'}).reset_index().drop(
+            columns=0)
+        d = c.groupby([config.part_of_day], as_index=True)[config.x_program_genre].apply(sorted).apply(
+            tuple).reset_index()
         self.tags_seen_in_part_of_day = d.set_index(config.part_of_day).to_dict()[config.x_program_genre]
+        logger.info("{}: calc top-k seen in part of day -------------->".format(
+            time.asctime(time.localtime(time.time()))))
 
-    def propagate_predicted_cluster(self, predicted):
-        """
-
-        :return:
-        """
-        logger.info("{}: propagate predicted cluster".format(time.asctime(time.localtime(time.time()))))
-        logging.info('{}: before clusters viterbi'.format(time.asctime(time.localtime(time.time()))))
+    # def propagate_predicted_cluster(self, predicted):
+    #     """
+    #
+    #     :return:
+    #     """
+    #     logger.info("{}: propagate predicted cluster".format(time.asctime(time.localtime(time.time()))))
+    #     logging.info('{}: before clusters viterbi'.format(time.asctime(time.localtime(time.time()))))
         reversed_clustered = {}
 
         # df_program_viewing['program_genre_clustered'] = df_program_viewing['Program Genre'].map(revresed_clustered)
