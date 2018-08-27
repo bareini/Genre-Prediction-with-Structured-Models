@@ -25,14 +25,14 @@ class Evaluate:
         for key, value in self.model.dict_nodes_per_device.items():
             min_index = min(value - shift)
             max_index = max(value - shift)
-            self.acc_per_dev.append(np.mean(self.accuracy[min_index:max_index]))
-            recall_i = np.mean(self.recall[min_index:max_index])
+            self.acc_per_dev.append(np.mean(self.accuracy[min_index:max_index+1]))
+            recall_i = np.mean(self.recall[min_index:max_index+1])
             self.recall_per_dev.append(recall_i)
-            precision_i = np.mean(self.precision[min_index:max_index])
+            precision_i = np.mean(self.precision[min_index:max_index+1])
             self.precision_per_dev.append(precision_i)
             f1_i = (((2 * precision_i * recall_i) / (precision_i + recall_i)) if precision_i + recall_i != 0.0 else 0.0)
             self.f1_per_dev.append(f1_i)
-
+        print('number of devices full prediction :{}'.format(self.acc_per_dev.count(1)))
 
 
 
