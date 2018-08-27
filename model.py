@@ -1,4 +1,5 @@
 import logging
+import time
 from itertools import count
 from collections import defaultdict
 from typing import List, Any
@@ -53,9 +54,6 @@ class Model:
         self.test_true_genres = test_df[config.x_program_genre].tolist()
         self.tags_seen_in_part_of_day = defaultdict(list)
 
-        if config.x_clustered_genre in self.df_x.columns:
-            self.propagate_predicted_cluster()
-
         self.feature_position_counter = count()
         self.prec_positions = []  # cols which are valid also for preceptron
         self.init_features()
@@ -84,7 +82,10 @@ class Model:
                     if col == config.x_program_genre:
                         self.all_tags_list = self.df_x[col].unique().tolist()
                         for genres in self.df_x[col].unique():
-                            self.atomic_tags.update(set(genres.split(',')))
+                            if type(genres) == str:
+                                self.atomic_tags.update(set(genres.split(',')))
+                            else:
+                                self.atomic_tags.add(genres)
                 elif action == 'unique':
                     self.features_position.update(
                         {"{}_{}".format(prefix, feature_val): next(self.feature_position_counter)
@@ -512,25 +513,27 @@ class Model:
         d = c.groupby([config.part_of_day], as_index=True)[config.x_program_genre].apply(sorted).apply(tuple).reset_index()
         self.tags_seen_in_part_of_day = d.set_index(config.part_of_day).to_dict()[config.x_program_genre]
 
-    # def propagate_predicted_cluster(self):
-    #     """
-    #
-    #     :return:
-    #     """
-    #     reversed_clustered = {}
-    #
-    #     # df_program_viewing['program_genre_clustered'] = df_program_viewing['Program Genre'].map(revresed_clustered)
-    #
-    #     df_program_viewing['prev_1_genre_clustered'] = df_program_viewing.groupby('Device ID')[
-    #         'program_genre_clustered'].shift(1).fillna('*')
-    #     df_program_viewing['prev_2_genre_clustered'] = df_program_viewing.groupby('Device ID')[
-    #         'program_genre_clustered'].shift(2).fillna('**')
-    #     df_program_viewing.loc[(df_program_viewing['prev_2_genre_clustered'] == '**')
-    #                            & (df_program_viewing['prev_1_genre_clustered'] != '*'), 'prev_2_genre'] = '*'
-    #     df_program_viewing['gen_in_dev_hh_1_clustered'] = df_program_viewing['gen_in_dev_hh_1'].map(
-    #         revresed_clustered).fillna(-1)
-    #     df_program_viewing['gen_in_advance_1_clustered'] = df_program_viewing['gen_in_advance_1'].map(
-    #         revresed_clustered).fillna(-1)
+    def propagate_predicted_cluster(self, predicted):
+        """
+
+        :return:
+        """
+        logger.info("{}: propagate predicted cluster".format(time.asctime(time.localtime(time.time()))))
+        logging.info('{}: before clusters viterbi'.format(time.asctime(time.localtime(time.time()))))
+        reversed_clustered = {}
+
+        # df_program_viewing['program_genre_clustered'] = df_program_viewing['Program Genre'].map(revresed_clustered)
+
+        # df_program_viewing['prev_1_genre_clustered'] = df_program_viewing.groupby('Device ID')[
+        #     'program_genre_clustered'].shift(1).fillna('*')
+        # df_program_viewing['prev_2_genre_clustered'] = df_program_viewing.groupby('Device ID')[
+        #     'program_genre_clustered'].shift(2).fillna('**')
+        # df_program_viewing.loc[(df_program_viewing['prev_2_genre_clustered'] == '**')
+        #                        & (df_program_viewing['prev_1_genre_clustered'] != '*'), 'prev_2_genre'] = '*'
+        # df_program_viewing['gen_in_dev_hh_1_clustered'] = df_program_viewing['gen_in_dev_hh_1'].map(
+        #     revresed_clustered).fillna(-1)
+        # df_program_viewing['gen_in_advance_1_clustered'] = df_program_viewing['gen_in_advance_1'].map(
+        #     revresed_clustered).fillna(-1)
 
 
 if __name__ == '__main__':

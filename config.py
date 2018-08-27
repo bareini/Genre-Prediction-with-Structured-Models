@@ -17,8 +17,8 @@ viewing_data_name = 'viewing_final.pkl.gz'
 demo_file_name = 'demo.pkl.gz'
 device_house_dict = 'dev_house_dict_new.pkl'
 house_device_dict = 'house_dev_dict_new.pkl'
-weights_file_name = os.path.join(weights_folder, 'my_weights.txt')
-results_file_name = os.path.join(results_folder, 'my_results.txt')
+weights_file_name = os.path.join(weights_folder, 'my_weights')
+results_file_name = os.path.join(results_folder, 'my_results')
 household_list = 'hh_list.pkl'
 clusters_df = 'viewing_clustered.pkl.gz'
 full_viewing = 'viewing_full_advance_clustered.pkl.gz'
@@ -162,7 +162,7 @@ thresholds = {
 
 }
 
-model_types = ['basic', 'Advanced']
+model_types = ['creative']
 
 # genres
 # genere_map =
@@ -187,6 +187,11 @@ part_of_day = 'part_of_day'
 num_of_top_k = 5
 x_household_id = 'household_id'
 x_clustered_genre = 'program_genre_clustered'
-
+x_clustered_prev_1 = 'prev_1_genre_clustered'
+x_clustered_prev_2 = 'prev_2_genre_clustered'
+x_clustered_advanced_2 = 'gen_in_advance_1_clustered'
+x_clustered_advanced_2_loc = 'advance_2_node_id'
+x_clustered_advanced_1 = 'gen_in_dev_hh_1_clustered'
+x_clustered_advanced_1_loc = 'advance_1_node_id'
 
 num_of_iters = 3

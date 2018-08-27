@@ -73,7 +73,7 @@ class ParametersMEMM:
             x0=self.w ,
             method='L-BFGS-B',
             jac=self.gradient,
-            options={'disp': True, 'maxiter': 100, 'ftol': 1e2 * np.finfo(float).eps}
+            options={'disp': True, 'maxiter': 200, 'ftol': 1e2 * np.finfo(float).eps}
         )
         self.w = results.x
         with open(res_file_name, "w") as file_object:
