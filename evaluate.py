@@ -11,7 +11,7 @@ class Evaluate:
         self.f1 = []
         self.model = model
 
-        self.acc_per_dec = []
+        self.acc_per_dev = []
         self.recall_per_dev = []
         self.precision_per_dev = []
         self.f1_per_dev = []
@@ -21,17 +21,18 @@ class Evaluate:
 
         :return: 3 lists : acc_per_dec, recall_per_dev, precision_per_dev
         """
-        i = 0
-        for key in self.model.dict_nodes_per_device.keys():
-            end_list = i + len(self.model.dict_nodes_per_device[key])
-            self.acc_per_dec.append(np.mean(self.accuracy[i:end_list]))
-            recall_i = np.mean(self.recall[i:end_list])
+        shift = self.model.test_df.index[0]
+        for key, value in self.model.dict_nodes_per_device.items():
+            min_index = min(value - shift)
+            max_index = max(value - shift)
+            self.acc_per_dev.append(np.mean(self.accuracy[min_index:max_index+1]))
+            recall_i = np.mean(self.recall[min_index:max_index+1])
             self.recall_per_dev.append(recall_i)
-            precision_i = np.mean(self.precision[i:end_list])
+            precision_i = np.mean(self.precision[min_index:max_index+1])
             self.precision_per_dev.append(precision_i)
             f1_i = (((2 * precision_i * recall_i) / (precision_i + recall_i)) if precision_i + recall_i != 0.0 else 0.0)
             self.f1_per_dev.append(f1_i)
-            i = end_list
+        print('number of devices full prediction :{}'.format(self.acc_per_dev.count(1)))
 
 
 
