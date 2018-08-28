@@ -3,7 +3,6 @@ import os
 # os/IO related
 sub_dirs = ["logs", "evaluations", "dict", "weights"]
 log_dir = 'logs'
-run_name = 'test'
 output_dir = 'output'
 data_dir = 'data'
 weights_folder = 'weights'
@@ -79,9 +78,7 @@ no_genre_cols = {
     'view_bins': ['unique', 'p1'],
     'completion_bins': ['unique', 'p2'],
     'Station Number': ['counter', 'p3'],
-    ('part_of_day', 'event_weekday'): ['interact', 't3'],
-    ('part_of_day', 'Station Number', 'Program Genre'): ['double_interact', 'g4'],  # NEW!
-
+    ('part_of_day', 'event_weekday'): ['interact', 't3']
 }
 
 
@@ -102,7 +99,7 @@ genere_cols = {
 
 }
 
-All_cols = [
+basic_cols = [
     no_genre_cols, genere_cols
 ]
 
@@ -162,9 +159,16 @@ thresholds = {
 
 }
 
-model_types = ['creative']
-
+# model types
 inner_clustered_type = 'basic_clustered'
+basic = 'basic'
+advanced = 'advanced'
+advanced_2 = 'advanced_2'
+creative = 'creative'
+perceptron = 'perceptron'
+model_types_to_run = [creative]
+
+run_name = "_".join(model_types_to_run)
 
 # genres
 # genere_map =

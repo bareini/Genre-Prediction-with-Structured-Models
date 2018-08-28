@@ -50,6 +50,7 @@ class Model:
         self.feature_vector_len = 0
         self.atomic_tags = set()
         self.features_position = {}
+        self.coll_actions = {}
         self.tags_seen_in_station = defaultdict(set)
         self.true_genres = df_x[config.x_program_genre].tolist()
         self.test_true_genres = test_df[config.x_program_genre].tolist()
@@ -74,50 +75,59 @@ class Model:
         """
         logger.info("{}: init features <--------------".format(time.asctime(time.localtime(time.time()))))
         self.feature_from_demo()  # run the demographic feature init
-        for dict_cols in config.All_cols:
-            for col, (action, prefix) in dict_cols.items():
-                if action == 'counter':
-                    # todo: take it out to function
-                    temp_df = self.df_x[col].value_counts()
-                    self.features_position.update(
-                        {"{}_{}".format(prefix, feature_val): next(self.feature_position_counter)
-                         for feature_val in temp_df[temp_df > config.thresholds[col]].index})
-                    if col == config.x_program_genre:
-                        self.all_tags_list = self.df_x[col].unique().tolist()
-                        for genres in self.df_x[col].unique():
-                            if type(genres) == str:
-                                self.atomic_tags.update(set(genres.split(',')))
-                            else:
-                                self.atomic_tags.add(genres)
-                elif action == 'unique':
-                    self.features_position.update(
-                        {"{}_{}".format(prefix, feature_val): next(self.feature_position_counter)
-                         for feature_val in self.df_x[col].astype(str).unique()})
-                elif action == 'interact':
-                    col_1, col_2 = col
-                    temp_df = self.df_x.groupby([col_1, col_2], as_index=True).size()
-                    # if prefix == config.part_of_day_genre:
-                    #     temp_df = temp_df.reset_index()
-                    #     for col1, col2, val in temp_df.values:
-                    #         self.tags_seen_in_part_of_day[col1].append(col2)
-                    #     continue
-                    temp_df = temp_df[temp_df > config.thresholds[col]].reset_index()
-                    self.features_position.update(
-                        {"{}_{}_{}".format(prefix, col1, col2): next(self.feature_position_counter)
-                         for col1, col2, val in temp_df.values})
+        feature_cols = config.basic_cols
+        if self.model_type == config.advanced:
+            feature_cols.append(config.advanced_household32)
+        if self.model_type == config.advanced_2:
+            feature_cols.append(config.advanced_pattern2)
+        if self.model_type == config.creative:
+            feature_cols.append(config.cluster_cols)
+        for dict_cols in feature_cols:
+            self.coll_actions.update(dict_cols)
 
-                elif action == 'double_interact':
-                    col_1, col_2, col_3 = col
-                    temp_df = self.df_x.groupby([col_1, col_2, col_3], as_index=True).size()  # .reset_index()
-                    temp_df = temp_df[temp_df > config.thresholds[col]].reset_index()
-                    self.features_position.update(
-                        {"{}_{}_{}_{}".format(prefix, col1, col2, col3): next(self.feature_position_counter)
-                         for col1, col2, col3, val in temp_df.values})
-                    if prefix == config.station_time_genre:
-                        temp_df = temp_df.reset_index()
-                        for col0, col1, col2, col3, col4 in temp_df.values:
-                            self.tags_seen_in_station[col1, col2].update({col3})
-                        continue
+        for col, (action, prefix) in self.coll_actions.items():
+            if action == 'counter':
+                # todo: take it out to function
+                temp_df = self.df_x[col].value_counts()
+                self.features_position.update(
+                    {"{}_{}".format(prefix, feature_val): next(self.feature_position_counter)
+                     for feature_val in temp_df[temp_df > config.thresholds[col]].index})
+                if col == config.x_program_genre:
+                    self.all_tags_list = self.df_x[col].unique().tolist()
+                    for genres in self.df_x[col].unique():
+                        if type(genres) == str:
+                            self.atomic_tags.update(set(genres.split(',')))
+                        else:
+                            self.atomic_tags.add(genres)
+            elif action == 'unique':
+                self.features_position.update(
+                    {"{}_{}".format(prefix, feature_val): next(self.feature_position_counter)
+                     for feature_val in self.df_x[col].astype(str).unique()})
+            elif action == 'interact':
+                col_1, col_2 = col
+                temp_df = self.df_x.groupby([col_1, col_2], as_index=True).size()
+                # if prefix == config.part_of_day_genre:
+                #     temp_df = temp_df.reset_index()
+                #     for col1, col2, val in temp_df.values:
+                #         self.tags_seen_in_part_of_day[col1].append(col2)
+                #     continue
+                temp_df = temp_df[temp_df > config.thresholds[col]].reset_index()
+                self.features_position.update(
+                    {"{}_{}_{}".format(prefix, col1, col2): next(self.feature_position_counter)
+                     for col1, col2, val in temp_df.values})
+
+            elif action == 'double_interact':
+                col_1, col_2, col_3 = col
+                temp_df = self.df_x.groupby([col_1, col_2, col_3], as_index=True).size()  # .reset_index()
+                temp_df = temp_df[temp_df > config.thresholds[col]].reset_index()
+                self.features_position.update(
+                    {"{}_{}_{}_{}".format(prefix, col1, col2, col3): next(self.feature_position_counter)
+                     for col1, col2, col3, val in temp_df.values})
+                if prefix == config.station_time_genre:
+                    temp_df = temp_df.reset_index()
+                    for col0, col1, col2, col3, col4 in temp_df.values:
+                        self.tags_seen_in_station[col1, col2].update({col3})
+                    continue
 
         self.prec_positions = list(set(self.prec_positions))
         for key in self.features_position.keys():
@@ -245,14 +255,10 @@ class Model:
         :return: a list of string which represents the potential - features for verifying weather its
         """
 
-        if self.model_type == "Advanced":
-            config.col_action.update(config.advanced_household32)
-            config.genere_cols.update(config.advanced_household32)
-
         node = self.df_x.loc[device_id]
         feature_vector_positions = []
 
-        for col, (action, prefix) in config.col_action.items():
+        for col, (action, prefix) in self.coll_actions.items():
 
             if col in config.genere_cols:
                 continue
@@ -287,15 +293,15 @@ class Model:
         node = self.df_x.loc[device_id]
         feature_vector_positions = []
 
-        if self.model_type != 'perceptron':
+        if self.model_type != config.perceptron:
 
-            if self.model_type == 'advanced2':
+            if self.model_type == config.advanced_2:
                 config.col_action.update(config.advanced_pattern2)
                 config.genere_cols.update(config.advanced_pattern2)
-            elif self.model_type == "advanced":
+            elif self.model_type == config.advanced:
                 config.col_action.update(config.advanced_household32)
                 config.genere_cols.update(config.advanced_household32)
-            if self.model_type == "creative":
+            if self.model_type == config.creative:
                 config.col_action.update(config.cluster_cols)
                 config.genere_cols.update(config.cluster_cols)
 
@@ -390,13 +396,13 @@ class Model:
         :param target_genere:  the genere we are considering
         :return: a list of string which represents the potential - features for verifying weather its
         """
-        if self.model_type == 'advanced2':
+        if self.model_type == config.advanced_2:
             config.col_action.update(config.advanced_pattern2)
             config.genere_cols.update(config.advanced_pattern2)
-        elif self.model_type == "advanced":
+        elif self.model_type == config.advanced:
             config.col_action.update(config.advanced_household32)
             config.genere_cols.update(config.advanced_household32)
-        if self.model_type == "creative":
+        if self.model_type == config.creative:
             config.col_action.update(config.cluster_cols)
             config.genere_cols.update(config.cluster_cols)
 

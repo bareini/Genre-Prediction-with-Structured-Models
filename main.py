@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
     house_device_dict = dict(list(house_device_dict.items()))
 
-    for type_ in config.model_types:
+    for type_ in config.model_types_to_run:
         if type_ in ['basic', 'advanced', 'advanced2']:
             df_x = pd.read_pickle(os.path.join(data_dir, config.viewing_data_name))
 
@@ -53,15 +53,15 @@ if __name__ == "__main__":
             dfx_test = df_x.loc[idx + 1:, ]
 
             logging.info('{}: before create model: {}'.format(time.asctime(time.localtime(time.time())), type_))
-            # model = Model(df_demo=df_demo,
-            #               df_x=dfx_train,
-            #               house_device=house_device_dict,
-            #               device_house=device_house_dict,
-            #               model_type=type,
-            #               test_df=dfx_test)
-            # model_name = '{}_model.pkl'.format(type)
-            # pickle.dump(model, open(os.path.join(directory, config.dict_folder, model_name), 'wb'))
-            model = pickle.load(open(os.path.join(base_directory, config.models_folder, 'advanced2_model.pkl'), 'rb'))
+            model = Model(df_demo=df_demo,
+                          df_x=dfx_train,
+                          house_device=house_device_dict,
+                          device_house=device_house_dict,
+                          model_type=type_,
+                          test_df=dfx_test)
+            model_name = '{}_model.pkl'.format(type_)
+            pickle.dump(model, open(os.path.join(directory, config.dict_folder, model_name), 'wb'))
+            # model = pickle.load(open(os.path.join(base_directory, config.models_folder, 'advanced2_model.pkl'), 'rb'))
 
         else:
             df_x = None
@@ -92,6 +92,7 @@ if __name__ == "__main__":
                           test_df=df_clusters)
             model_name = '{}_cluster_model.pkl'.format(inner_type)
             pickle.dump(model, open(os.path.join(directory, config.dict_folder, model_name), 'wb'))
+            # model = pickle.load(open(os.path.join(base_directory, config.models_folder, model_name), 'rb'))
 
             logging.info('{}: before clusters_memm'.format(time.asctime(time.localtime(time.time()))))
             memm = ParametersMEMM(model, 0.1)
@@ -111,6 +112,8 @@ if __name__ == "__main__":
                 memm_pred.extend(pred)
                 memm_pred_nodes.extend(seq)
 
+            pickle.dump((memm_pred, memm_pred_nodes), open(os.path.join(directory, config.dict_folder, "viterbi.pkl"),
+                                                           'wb'))
             df_full.loc[memm_pred_nodes, config.x_clustered_genre] = memm_pred
             df_full[config.x_clustered_prev_1] = df_full.groupby(config.x_device_id)[
                 config.x_clustered_genre].shift(1).fillna('*')
