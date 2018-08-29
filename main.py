@@ -114,6 +114,8 @@ if __name__ == "__main__":
 
             pickle.dump((memm_pred, memm_pred_nodes), open(os.path.join(directory, config.dict_folder, "viterbi.pkl"),
                                                            'wb'))
+            # memm_pred, memm_pred_nodes = pickle.load(open(
+            #     os.path.join(base_directory, config.models_folder, 'viterbi.pkl'), 'rb'))
             df_full.loc[memm_pred_nodes, config.x_clustered_genre] = memm_pred
             df_full[config.x_clustered_prev_1] = df_full.groupby(config.x_device_id)[
                 config.x_clustered_genre].shift(1).fillna('*')

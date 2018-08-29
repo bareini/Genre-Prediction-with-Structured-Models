@@ -34,8 +34,6 @@ class Evaluate:
             self.f1_per_dev.append(f1_i)
         print('number of devices full prediction :{}'.format(self.acc_per_dev.count(1)))
 
-
-
     def calc_acc_recall_precision(self, pred_labels):
         """
         This function calculate the accuracy, recall and precision

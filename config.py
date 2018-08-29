@@ -155,8 +155,14 @@ thresholds = {
     ('gen_in_advance_1', 'part_of_day'): 5,
     ('event_weekday', 'gen_in_advance_1'): 5,
     ('gen_in_advance_1_prev1', 'gen_in_advance_1', 'Program Genre'): 5,
-    ('gen_in_advance_1_prev2', 'gen_in_advance_1_prev1', 'Program Genre'): 5
-
+    ('gen_in_advance_1_prev2', 'gen_in_advance_1_prev1', 'Program Genre'): 5,
+    'program_genre_clustered': 10,
+    ('part_of_day', 'gen_in_advance_1', 'Program Genre'): 10,
+    ('program_genre_clustered', 'Program Genre'): 10,
+    ('event_weekday', 'program_genre_clustered'): 10,
+    ('prev_1_genre_clustered', 'part_of_day'): 10,
+    ('prev_1_genre_clustered', 'program_genre_clustered', 'Program Genre'): 10,
+    ('prev_2_genre_clustered', 'prev_1_genre_clustered', 'program_genre_clustered'): 5
 }
 
 # model types
@@ -166,7 +172,7 @@ advanced = 'advanced'
 advanced_2 = 'advanced_2'
 creative = 'creative'
 perceptron = 'perceptron'
-model_types_to_run = [creative]
+model_types_to_run = [creative, basic]
 
 run_name = "_".join(model_types_to_run)
 
