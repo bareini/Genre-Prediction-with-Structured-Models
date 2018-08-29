@@ -1,3 +1,4 @@
+import copy
 import logging
 import os
 import pickle
@@ -37,6 +38,8 @@ if __name__ == "__main__":
     device_house_dict = pickle.load(open(os.path.join(data_dir, config.device_house_dict), 'rb'))
     house_device_dict = pickle.load(open(os.path.join(data_dir, config.house_device_dict), 'rb'))
     hh_ids = pickle.load(open(os.path.join(base_directory, config.models_folder, config.household_list), 'rb'))
+    col_action_copy = copy.deepcopy(config.col_action)
+    genre_cols_copy = copy.deepcopy(config.genere_cols)
 
     house_device_dict = dict(list(house_device_dict.items()))
 
@@ -73,15 +76,17 @@ if __name__ == "__main__":
 
             df_clusters = pd.read_pickle(os.path.join(data_dir, config.clusters_df))
             df_clusters = df_clusters.loc[df_clusters[config.x_household_id].isin(hh_ids)]
+            inner_type = config.inner_clustered_type
 
+            if inner_type == config.super_advanced_creative:
+                df_clusters[config.x_advanced_1] = df_full[config.x_clustered_advanced_1]
+                df_clusters[config.x_advanced_2] = df_full[config.x_clustered_advanced_2]
             threshold = round(len(df_clusters.groupby(['Device ID'])) * config.train_threshold)
             g = df_clusters.groupby(['Device ID']).groups
             dev_threshold = list(g)[threshold - 1]
             idx = g[dev_threshold][-1]
             df_clusters_train = df_clusters.loc[:idx, ]
             df_clusters_test = df_clusters.loc[idx + 1:, ]
-
-            inner_type = config.inner_clustered_type
 
             logging.info('{}: before create clusters model'.format(time.asctime(time.localtime(time.time()))))
             model = Model(df_demo=df_demo,
@@ -93,6 +98,10 @@ if __name__ == "__main__":
             model_name = '{}_cluster_model.pkl'.format(inner_type)
             pickle.dump(model, open(os.path.join(directory, config.dict_folder, model_name), 'wb'))
             # model = pickle.load(open(os.path.join(base_directory, config.models_folder, model_name), 'rb'))
+
+            # fix issue with the config being changed by the model
+            config.col_action = copy.deepcopy(col_action_copy)
+            config.genere_cols = copy.deepcopy(genre_cols_copy)
 
             logging.info('{}: before clusters_memm'.format(time.asctime(time.localtime(time.time()))))
             memm = ParametersMEMM(model, 0.1)
@@ -233,3 +242,7 @@ if __name__ == "__main__":
 
         pickle.dump(evaluate,
                     open(os.path.join(directory, config.results_folder, 'memm_evaluate_{}.pkl'.format(type_)), 'wb'))
+
+        # fix issue with the config being changed by the model
+        config.col_action = copy.deepcopy(col_action_copy)
+        config.genere_cols = copy.deepcopy(genre_cols_copy)

@@ -172,14 +172,16 @@ thresholds = {
 }
 
 # model types
-inner_clustered_type = 'basic_clustered'
 basic = 'basic'
 advanced = 'advanced'
 advanced_2 = 'advanced_2'
 super_advanced = 'super_advanced'
 creative = 'creative'
 perceptron = 'perceptron'
-model_types_to_run = [super_advanced]
+super_advanced_creative = 'super_advanced_clustered'
+
+inner_clustered_type = super_advanced_creative
+model_types_to_run = [creative]
 
 run_name = "_".join(model_types_to_run)
 
@@ -212,6 +214,9 @@ x_clustered_advanced_2 = 'gen_in_advance_1_clustered'
 x_clustered_advanced_2_loc = 'advance_2_node_id'
 x_clustered_advanced_1 = 'gen_in_dev_hh_1_clustered'
 x_clustered_advanced_1_loc = 'advance_1_node_id'
+
+x_advanced_1 = 'gen_in_dev_hh_1'
+x_advanced_2 = 'gen_in_dev_hh_1'
 
 num_of_iters = 3
 
