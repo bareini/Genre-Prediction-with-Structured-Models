@@ -41,7 +41,7 @@ if __name__ == "__main__":
     house_device_dict = dict(list(house_device_dict.items()))
 
     for type_ in config.model_types_to_run:
-        if type_ in ['basic', 'advanced', 'advanced2']:
+        if type_ in [config.basic, config.advanced, config.advanced_2, config.super_advanced]:
             df_x = pd.read_pickle(os.path.join(data_dir, config.viewing_data_name))
 
             df_x = df_x.loc[df_x[config.x_household_id].isin(hh_ids)]
@@ -200,12 +200,19 @@ if __name__ == "__main__":
         viterbi = Viterbi(model, memm.w)
         # viterbi = pickle.load(open(os.path.join(base_directory, config.models_folder, 'viterbi.pkl'), 'rb'))
         memm_pred = []
+        memm_pred_nodes = []
+
         # todo; make avilalble when the sequences dict is merged
         for seq in model.dict_nodes_per_device.values():
             # if len(seq) < 3:
             #     continue
             pred = viterbi.viterbi_algorithm(seq)
             memm_pred.extend(pred)
+            memm_pred_nodes.extend(seq)
+
+        pickle.dump((memm_pred, memm_pred_nodes), open(os.path.join(directory, config.dict_folder, "viterbi.pkl"),
+                                                           'wb'))
+
 
         # seq = model.dict_notes_per_device['00000047d22b']
         # pred = viterbi.viterbi_algorithm(seq)
