@@ -82,8 +82,13 @@ class Model:
             feature_cols.append(config.advanced_pattern2)
         if self.model_type == config.creative:
             feature_cols.append(config.cluster_cols)
+        if self.model_type == config.super_advanced:
+            feature_cols.append(config.advanced_household32)
+            feature_cols.append(config.advanced_pattern2)
+
         for dict_cols in feature_cols:
             self.coll_actions.update(dict_cols)
+
 
         for col, (action, prefix) in self.coll_actions.items():
             if action == 'counter':
@@ -305,6 +310,10 @@ class Model:
                 config.col_action.update(config.cluster_cols)
                 config.genere_cols.update(config.cluster_cols)
 
+            if self.model_type == config.super_advanced:
+                config.col_action.update(config.advanced_household32)
+                config.col_action.update(config.advanced_pattern2)
+
             for col in config.genere_cols:
                 action, prefix = config.col_action[col]
 
@@ -405,6 +414,11 @@ class Model:
         if self.model_type == config.creative:
             config.col_action.update(config.cluster_cols)
             config.genere_cols.update(config.cluster_cols)
+
+        if self.model_type == config.super_advanced:
+            config.col_action.update(config.advanced_household32)
+            config.col_action.update(config.advanced_pattern2)
+
 
         node = self.test_df.loc[device_id]
         feature_vector_positions = []

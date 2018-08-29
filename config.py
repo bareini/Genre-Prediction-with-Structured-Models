@@ -116,7 +116,8 @@ advanced_pattern2 = {
     ('gen_in_advance_1', 'Program Genre'): ['interact', 'ad1'],
     ('gen_in_advance_1', 'part_of_day'): ['interact', 'ad2'],
     ('event_weekday', 'gen_in_advance_1'): ['interact', 'h3'],
-    ('part_of_day', 'gen_in_advance_1', 'Program Genre'): ['double_interact', 'ad4']
+    ('part_of_day', 'gen_in_advance_1', 'Program Genre'): ['double_interact', 'ad4'],
+
 }
 
 cluster_cols = {
@@ -156,6 +157,11 @@ thresholds = {
     ('event_weekday', 'gen_in_advance_1'): 5,
     ('gen_in_advance_1_prev1', 'gen_in_advance_1', 'Program Genre'): 5,
     ('gen_in_advance_1_prev2', 'gen_in_advance_1_prev1', 'Program Genre'): 5,
+    ('gen_in_advance_1', 'Program Genre'): 5,
+    ('gen_in_advance_1', 'part_of_day'): 5,
+    ('event_weekday', 'gen_in_advance_1'): 5,
+    ('part_of_day', 'gen_in_advance_1', 'Program Genre'): 5,
+    ('gen_in_advance_1_prev2', 'gen_in_advance_1_prev1', 'Program Genre'): 5,
     'program_genre_clustered': 10,
     ('part_of_day', 'gen_in_advance_1', 'Program Genre'): 10,
     ('program_genre_clustered', 'Program Genre'): 10,
@@ -170,9 +176,10 @@ inner_clustered_type = 'basic_clustered'
 basic = 'basic'
 advanced = 'advanced'
 advanced_2 = 'advanced_2'
+super_advanced = 'super_advanced'
 creative = 'creative'
 perceptron = 'perceptron'
-model_types_to_run = [creative, basic]
+model_types_to_run = [super_advanced]
 
 run_name = "_".join(model_types_to_run)
 
